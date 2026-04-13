@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors */
+  --srr-cream: #FDFBF7;
+  --srr-green: #2C5E3B;
+  --srr-dark-green: #1A3923;
+  --srr-sunset-start: #FF7E5F;
+  --srr-sunset-end: #FEB47B;
+  --srr-gold: #D4AF37;
+  --srr-black: #111111;
+  --srr-white: #FFFFFF;
+
+  --background: var(--srr-cream);
+  --foreground: var(--srr-black);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-green: var(--srr-green);
+  --color-brand-dark-green: var(--srr-dark-green);
+  --color-brand-sunset-start: var(--srr-sunset-start);
+  --color-brand-sunset-end: var(--srr-sunset-end);
+  --color-brand-gold: var(--srr-gold);
+  --font-sans: var(--font-inter), sans-serif;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .bg-sunset-gradient {
+    background: linear-gradient(135deg, var(--srr-sunset-start) 0%, var(--srr-sunset-end) 100%);
+  }
+  
+  .text-sunset-gradient {
+    background: linear-gradient(135deg, var(--srr-sunset-start) 0%, var(--srr-sunset-end) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
