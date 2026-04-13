@@ -19,7 +19,12 @@ export function Footer() {
               SRR Resort and Convention is your premium destination for peaceful luxury, family stays, and grand celebrations. Purity you can trust in every experience.
             </p>
             <div className="flex pt-2">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-rose-400 shadow-sm border border-white/10 hover:bg-white/10 transition-colors">
+              <a 
+                href="https://www.instagram.com/srr.resort?igsh=MWk3cWhsOHBsY3pv" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-rose-400 shadow-sm border border-white/10 hover:bg-white/10 transition-colors"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
