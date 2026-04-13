@@ -33,7 +33,22 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-2xl md:text-7xl font-bold tracking-tight mb-6 md:mb-6 leading-tight text-white drop-shadow-2xl"
           >
-            <span className="md:hidden">Welcome to SRR Resorts</span>
+            <span className="md:hidden inline-block">
+              {"Welcome to SRR Resorts".split("").map((char, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    duration: 0.05,
+                    delay: 0.5 + index * 0.08,
+                    ease: "linear"
+                  }}
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </span>
             <span className="hidden md:inline">
               Discover Serenity at <br/>
               <span className="text-brand-sunset-start">SRR Resorts</span>

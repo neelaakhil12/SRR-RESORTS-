@@ -41,7 +41,7 @@ export function Navbar() {
             <img 
               src="/logo.png" 
               alt="SRR Resorts Logo" 
-              className={`${isHome ? 'h-14 md:h-36' : 'h-12 md:h-24'} w-auto object-contain transition-all duration-300`}
+              className={`${isHome ? 'h-20 md:h-36' : 'h-16 md:h-24'} w-auto object-contain transition-all duration-300`}
             />
           </Link>
         </div>
