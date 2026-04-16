@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { CheckCircle2, Camera, MapPin, Grid, Layers, Home } from "lucide-react";
 
-const CATEGORIES = ["All", "Rooms", "Hall", "Exterior", "Leisure"];
 
 const GALLERY_IMAGES = [
   {
@@ -54,11 +53,7 @@ const GALLERY_IMAGES = [
 ];
 
 export default function GalleryPage() {
-  const [filter, setFilter] = useState("All");
-
-  const filteredImages = filter === "All" 
-    ? GALLERY_IMAGES 
-    : GALLERY_IMAGES.filter(img => img.category === filter);
+  const images = GALLERY_IMAGES;
 
   return (
     <div className="flex flex-col min-h-screen py-12 md:py-24 px-4 bg-srr-cream">
@@ -75,26 +70,10 @@ export default function GalleryPage() {
           </p>
         </div>
 
-        {/* Filter Bar */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10 md:mb-16">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                filter === cat
-                  ? "bg-brand-dark-green text-white shadow-lg scale-105"
-                  : "bg-white text-gray-500 hover:bg-gray-100 hover:text-brand-dark-green"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
         
         {/* Image Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredImages.map((img, idx) => (
+          {images.map((img, idx) => (
             <div 
               key={idx} 
               className="group relative h-[280px] md:h-96 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 animate-in zoom-in-95"
@@ -123,10 +102,10 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {filteredImages.length === 0 && (
+        {images.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
             <Layers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium">No images found in this category.</p>
+            <p className="text-gray-500 font-medium">No images found.</p>
           </div>
         )}
 

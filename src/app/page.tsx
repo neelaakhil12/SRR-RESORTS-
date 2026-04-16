@@ -115,6 +115,12 @@ export default function Home() {
   const [checkOut, setCheckOut] = useState("");
   const [checkInTime, setCheckInTime] = useState({ hour: "10", minute: "00", period: "AM" });
   const [checkOutTime, setCheckOutTime] = useState({ hour: "06", minute: "00", period: "PM" });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const handleSearch = () => {
     if (serviceType === "Select Service") {
@@ -135,297 +141,342 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section - Booking.com Style Header Integrated */}
-      <section className="relative w-full min-h-[620px] md:min-h-[900px] flex items-center justify-center bg-[url('/hero.png')] bg-cover bg-[50%_20%] text-white overflow-visible mb-28 md:mb-16">
+      <section className={`relative w-full h-[56.25vw] min-h-[220px] md:h-auto md:min-h-[900px] flex items-center justify-center bg-[url('/hero.png')] bg-cover bg-center md:bg-[50%_20%] text-white overflow-visible ${isExpanded ? 'mb-44' : 'mb-2'} md:mb-16 transition-all duration-500`}>
         <div className="absolute inset-0 bg-black/40" />
-        
-        <div className="z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center pt-20 md:pt-0">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-3xl md:text-6xl font-bold tracking-tight mb-4 leading-tight drop-shadow-lg"
-          >
-            Your Private Paradise <br/> Awaits at SRR Resorts
-          </motion.h1>
+        <div className="z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center pt-2 md:pt-0">
+          <div className="flex flex-col items-center mb-10 md:mb-16">
+            <motion.div 
+              className="text-sm md:text-5xl font-extrabold tracking-[0.2em] md:tracking-[0.3em] uppercase mb-4 text-brand-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+              initial="hidden"
+              animate="visible"
+            >
+              {mounted ? "Welcome to SRR".split("").map((char, index) => (
+                <motion.span
+                  key={index}
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 }
+                  }}
+                  transition={{ duration: 0.1, delay: index * 0.08 }}
+                >
+                  {char}
+                </motion.span>
+              )) : "Welcome to SRR"}
+            </motion.div>
+
+            <motion.div 
+              className="text-xs md:text-2xl font-medium tracking-widest text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] italic"
+              initial="hidden"
+              animate="visible"
+            >
+              {mounted ? "Where Comfort Meets Luxury".split("").map((char, index) => (
+                <motion.span
+                  key={index}
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 }
+                  }}
+                  transition={{ duration: 0.1, delay: (index * 0.06) + 1.2 }}
+                >
+                  {char}
+                </motion.span>
+              )) : "Where Comfort Meets Luxury"}
+            </motion.div>
+          </div>
           
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-lg md:text-2xl mb-12 font-medium text-white/90 drop-shadow-md"
-          >
-            Luxury stays, grand events & nature escapes — all in one exclusive destination
-          </motion.p>
           
           {/* SRR Booking Bar - The Focal Point */}
           <motion.div 
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl z-30"
+            className="absolute top-[92%] md:top-auto md:-bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl z-30 transition-all duration-500"
           >
             <div className="bg-brand-gold p-1 rounded-xl shadow-2xl relative">
-              <div className="bg-white rounded-[10px] p-2 md:p-1 flex flex-col md:flex-row items-stretch gap-1 md:h-16">
+              <div className="bg-white rounded-[10px] p-1.5 md:p-1 flex flex-col md:flex-row items-stretch gap-0.5 md:gap-1 md:h-16">
                 
-                {/* Service Type Selection */}
-                <div 
-                  onClick={() => setActivePopover(activePopover === "service" ? null : "service")}
-                  className={`flex-1 flex items-center gap-3 px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative rounded-l-md ${activePopover === 'service' ? 'bg-gray-50' : ''}`}
-                >
-                  <div className={`p-2 rounded-lg transition-colors ${serviceType === 'Select Service' ? 'bg-gray-100 text-gray-400' : 'bg-brand-dark-green/5 text-brand-dark-green'}`}>
-                    {serviceType === 'Luxury Rooms' && <Building2 className="w-5 h-5" />}
-                    {serviceType === 'Independent Houses' && <HomeIcon className="w-5 h-5" />}
-                    {serviceType === 'Convention Hall' && <Calendar className="w-5 h-5" />}
-                    {serviceType === 'Sports & Leisure Activities' && <Waves className="w-5 h-5" />}
-                    {serviceType === 'Select Service' && <Plus className="w-5 h-5" />}
-                  </div>
-                  <div className="flex flex-col text-left flex-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Service Type</span>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className={`text-sm font-bold truncate ${serviceType === 'Select Service' ? 'text-gray-400' : 'text-brand-dark-green'}`}>
-                        {serviceType}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${activePopover === 'service' ? 'rotate-180' : ''}`} />
-                    </div>
-                  </div>
-
-                  {/* Service Selection Popover */}
-                  <AnimatePresence>
-                    {activePopover === "service" && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 overflow-hidden"
-                      >
-                        {[
-                          { name: 'Luxury Rooms', icon: Building2, desc: '12 premium rooms across 3 floors' },
-                          { name: 'Independent Houses', icon: HomeIcon, desc: 'Private stays with bonfire & water body' },
-                          { name: 'Convention Hall', icon: Calendar, desc: '1000+ capacity for grand events' },
-                          { name: 'Sports & Leisure Activities', icon: Waves, desc: 'Pool & Box Cricket for day visitors' }
-                        ].map((item) => (
-                          <div
-                            key={item.name}
-                            onClick={() => {
-                              setServiceType(item.name);
-                              setActivePopover(null);
-                            }}
-                            className={`flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer hover:bg-gray-50 group/item ${serviceType === item.name ? 'bg-brand-dark-green/5' : ''}`}
-                          >
-                            <div className={`p-2 rounded-lg ${serviceType === item.name ? 'bg-brand-dark-green text-white' : 'bg-gray-100 text-gray-400 group-hover/item:bg-brand-gold/20 group-hover/item:text-brand-gold'}`}>
-                              <item.icon className="w-4 h-4" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className={`text-sm font-bold ${serviceType === item.name ? 'text-brand-dark-green' : 'text-gray-700'}`}>
-                                {item.name}
-                              </span>
-                              <span className="text-[10px] text-gray-400 leading-tight">
-                                {item.desc}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Date Selection */}
-                <div 
-                  onClick={() => setActivePopover(activePopover === "dates" ? null : "dates")}
-                  className={`flex-1 flex items-center gap-3 px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative ${activePopover === 'dates' ? 'bg-gray-50' : ''}`}
-                >
-                  <Calendar className="w-5 h-5 text-gray-400 group-hover:text-brand-dark-green transition-colors" />
-                  <div className="flex flex-col text-left">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Check-in — Check-out</span>
-                    <span className="text-sm font-bold text-brand-dark-green">
-                      {checkIn && checkOut 
-                        ? `${format(new Date(checkIn), 'MMM dd')} - ${format(new Date(checkOut), 'MMM dd')}`
-                        : "Select Dates"}
-                    </span>
-                  </div>
-
-                  {/* Date Picker Popover */}
-                  <AnimatePresence>
-                    {activePopover === "dates" && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 mt-2 w-[320px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-bold text-brand-dark-green">Select Stay Dates</h4>
-                          <button onClick={() => setActivePopover(null)} className="p-1 hover:bg-gray-100 rounded-full">
-                            <X className="w-4 h-4 text-gray-400" />
-                          </button>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase">Check-in</label>
-                            <input 
-                              type="date" 
-                              min={today}
-                              value={checkIn}
-                              onChange={(e) => setCheckIn(e.target.value)}
-                              className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-sunset-start transition-all font-bold text-brand-dark-green"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase">Check-out</label>
-                            <input 
-                              type="date" 
-                              min={checkIn || today}
-                              value={checkOut}
-                              onChange={(e) => setCheckOut(e.target.value)}
-                              className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-sunset-start transition-all font-bold text-brand-dark-green"
-                            />
-                          </div>
-                          <button 
-                            onClick={() => setActivePopover(null)}
-                            className="w-full bg-brand-dark-green text-white py-3 rounded-xl font-bold mt-2"
-                          >
-                            Set Dates
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Time Selection - Hidden for Convention Hall */}
-                {serviceType !== 'Convention Hall' && (
+                <div className="flex items-stretch flex-1 gap-0.5">
+                  {/* Service Type Selection */}
                   <div 
-                    onClick={() => setActivePopover(activePopover === "times" ? null : "times")}
-                    className={`flex-1 flex items-center gap-3 px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative ${activePopover === 'times' ? 'bg-gray-50' : ''}`}
+                    onClick={() => setActivePopover(activePopover === "service" ? null : "service")}
+                    className={`flex-1 flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative rounded-l-md ${activePopover === 'service' ? 'bg-gray-50' : ''}`}
                   >
-                    <Clock className="w-5 h-5 text-gray-400 group-hover:text-brand-dark-green transition-colors" />
-                    <div className="flex flex-col text-left">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Select Time</span>
-                      <span className="text-sm font-bold text-brand-dark-green">
-                        {checkInTime.hour}:{checkInTime.minute} {checkInTime.period} - {checkOutTime.hour}:{checkOutTime.minute} {checkOutTime.period}
-                      </span>
+                    <div className={`p-1.5 rounded-lg transition-colors ${serviceType === 'Select Service' ? 'bg-gray-100 text-gray-400' : 'bg-brand-dark-green/5 text-brand-dark-green'}`}>
+                      {serviceType === 'Luxury Rooms' && <Building2 className="w-5 h-5" />}
+                      {serviceType === 'Independent Houses' && <HomeIcon className="w-5 h-5" />}
+                      {serviceType === 'Convention Hall' && <Calendar className="w-5 h-5" />}
+                      {serviceType === 'Sports & Leisure Activities' && <Waves className="w-5 h-5" />}
+                      {serviceType === 'Select Service' && <Plus className="w-5 h-5" />}
+                    </div>
+                    <div className="flex flex-col text-left flex-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Service Type</span>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-sm font-bold truncate ${serviceType === 'Select Service' ? 'text-gray-400' : 'text-brand-dark-green'}`}>
+                          {serviceType}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${activePopover === 'service' ? 'rotate-180' : ''}`} />
+                      </div>
                     </div>
 
-                    {/* Time Picker Popover */}
+                    {/* Service Selection Popover */}
                     <AnimatePresence>
-                      {activePopover === "times" && (
+                      {activePopover === "service" && (
                         <motion.div 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute top-full right-0 md:left-0 mt-2 w-[340px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 overflow-hidden"
+                          className="absolute top-full left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 overflow-hidden"
                         >
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-bold text-brand-dark-green text-sm flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-brand-gold" /> Select Booking Time
-                            </h4>
-                            <button onClick={() => setActivePopover(null)} className="p-1 hover:bg-gray-100 rounded-full">
-                              <X className="w-4 h-4 text-gray-400" />
-                            </button>
-                          </div>
-                          
-                          <div className="space-y-6">
-                            {/* From Time Selector */}
-                            <div className="space-y-3">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-1">Arrival Time</label>
-                              <div className="flex items-center gap-2">
-                                {/* Hours Select */}
-                                <select 
-                                  value={checkInTime.hour}
-                                  onChange={(e) => setCheckInTime({...checkInTime, hour: e.target.value})}
-                                  className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
-                                >
-                                  {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
-                                    <option key={h} value={h} className="text-brand-dark-green">{h}</option>
-                                  ))}
-                                </select>
-                                <span className="font-bold text-gray-300">:</span>
-                                {/* Minutes Select */}
-                                <select 
-                                  value={checkInTime.minute}
-                                  onChange={(e) => setCheckInTime({...checkInTime, minute: e.target.value})}
-                                  className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
-                                >
-                                  {["00", "15", "30", "45"].map(m => (
-                                    <option key={m} value={m} className="text-brand-dark-green">{m}</option>
-                                  ))}
-                                </select>
-                                {/* AM/PM PM Selector */}
-                                <div className="flex p-0.5 bg-gray-100 rounded-lg">
-                                  {["AM", "PM"].map(p => (
-                                    <button
-                                      key={p}
-                                      onClick={() => setCheckInTime({...checkInTime, period: p})}
-                                      className={`px-3 py-1.5 text-[10px] font-black rounded-md transition-all ${checkInTime.period === p ? 'bg-white text-brand-dark-green shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                                    >
-                                      {p}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* To Time Selector */}
-                            <div className="space-y-3">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-1">Departure Time</label>
-                              <div className="flex items-center gap-2">
-                                <select 
-                                  value={checkOutTime.hour}
-                                  onChange={(e) => setCheckOutTime({...checkOutTime, hour: e.target.value})}
-                                  className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
-                                >
-                                  {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
-                                    <option key={h} value={h} className="text-brand-dark-green">{h}</option>
-                                  ))}
-                                </select>
-                                <span className="font-bold text-gray-300">:</span>
-                                <select 
-                                  value={checkOutTime.minute}
-                                  onChange={(e) => setCheckOutTime({...checkOutTime, minute: e.target.value})}
-                                  className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
-                                >
-                                  {["00", "15", "30", "45"].map(m => (
-                                    <option key={m} value={m} className="text-brand-dark-green">{m}</option>
-                                  ))}
-                                </select>
-                                <div className="flex p-0.5 bg-gray-100 rounded-lg">
-                                  {["AM", "PM"].map(p => (
-                                    <button
-                                      key={p}
-                                      onClick={() => setCheckOutTime({...checkOutTime, period: p})}
-                                      className={`px-3 py-1.5 text-[10px] font-black rounded-md transition-all ${checkOutTime.period === p ? 'bg-white text-brand-dark-green shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                                    >
-                                      {p}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <button
-                              onClick={() => setActivePopover(null)}
-                              className="w-full bg-brand-dark-green text-white py-3 rounded-xl font-bold mt-2 hover:bg-black transition-all"
+                          {[
+                            { name: 'Luxury Rooms', icon: Building2, desc: '12 premium rooms across 3 floors' },
+                            { name: 'Independent Houses', icon: HomeIcon, desc: 'Private stays with bonfire & water body' },
+                            { name: 'Convention Hall', icon: Calendar, desc: '1000+ capacity for grand events' },
+                            { name: 'Sports & Leisure Activities', icon: Waves, desc: 'Pool & Box Cricket for day visitors' }
+                          ].map((item) => (
+                            <div
+                              key={item.name}
+                              onClick={() => {
+                                setServiceType(item.name);
+                                setActivePopover(null);
+                              }}
+                              className={`flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer hover:bg-gray-50 group/item ${serviceType === item.name ? 'bg-brand-dark-green/5' : ''}`}
                             >
-                              Confirm Time
-                            </button>
-                          </div>
+                              <div className={`p-2 rounded-lg ${serviceType === item.name ? 'bg-brand-dark-green text-white' : 'bg-gray-100 text-gray-400 group-hover/item:bg-brand-gold/20 group-hover/item:text-brand-gold'}`}>
+                                <item.icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={`text-sm font-bold ${serviceType === item.name ? 'text-brand-dark-green' : 'text-gray-700'}`}>
+                                  {item.name}
+                                </span>
+                                <span className="text-[10px] text-gray-400 leading-tight">
+                                  {item.desc}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
-                )}
 
-                {/* Search Button */}
-                <button 
-                  onClick={handleSearch}
-                  className="bg-brand-dark-green hover:bg-black text-white px-8 py-4 md:py-0 rounded-lg font-bold transition-all flex items-center justify-center gap-2 active:scale-95 m-1"
-                >
-                  <Search className="w-5 h-5" />
-                  <span>Search</span>
-                </button>
+                  {/* Expand Toggle Button (Mobile Only) */}
+                  <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="md:hidden flex items-center justify-center px-3 border-l border-gray-100 text-gray-400 hover:text-brand-dark-green transition-colors"
+                  >
+                    <ChevronDown className={`w-5 h-5 transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                </div>
+
+                <AnimatePresence>
+                  {(isExpanded || (typeof window !== 'undefined' && window.innerWidth >= 768)) && (
+                    <motion.div 
+                      className="flex flex-col md:flex-row flex-1 items-stretch gap-0.5 md:gap-0"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      {/* Date Selection */}
+                      <div 
+                        onClick={() => setActivePopover(activePopover === "dates" ? null : "dates")}
+                        className={`flex-1 flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative ${activePopover === 'dates' ? 'bg-gray-50' : ''}`}
+                      >
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-brand-dark-green transition-colors" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Check-in — Check-out</span>
+                          <span className="text-sm font-bold text-brand-dark-green">
+                            {checkIn && checkOut 
+                              ? `${format(new Date(checkIn), 'MMM dd')} - ${format(new Date(checkOut), 'MMM dd')}`
+                              : "Select Dates"}
+                          </span>
+                        </div>
+
+                        {/* Date Picker Popover */}
+                        <AnimatePresence>
+                          {activePopover === "dates" && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute top-full left-0 mt-2 w-[320px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 overflow-hidden"
+                            >
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-brand-dark-green">Select Stay Dates</h4>
+                                <button onClick={() => setActivePopover(null)} className="p-1 hover:bg-gray-100 rounded-full">
+                                  <X className="w-4 h-4 text-gray-400" />
+                                </button>
+                              </div>
+                              <div className="space-y-4">
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-gray-400 uppercase">Check-in</label>
+                                  <input 
+                                    type="date" 
+                                    min={today}
+                                    value={checkIn}
+                                    onChange={(e) => setCheckIn(e.target.value)}
+                                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-sunset-start transition-all font-bold text-brand-dark-green"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-gray-400 uppercase">Check-out</label>
+                                  <input 
+                                    type="date" 
+                                    min={checkIn || today}
+                                    value={checkOut}
+                                    onChange={(e) => setCheckOut(e.target.value)}
+                                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-sunset-start transition-all font-bold text-brand-dark-green"
+                                  />
+                                </div>
+                                <button 
+                                  onClick={() => setActivePopover(null)}
+                                  className="w-full bg-brand-dark-green text-white py-3 rounded-xl font-bold mt-2"
+                                >
+                                  Set Dates
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Time Selection - Hidden for Convention Hall */}
+                      {serviceType !== 'Convention Hall' && (
+                        <div 
+                          onClick={() => setActivePopover(activePopover === "times" ? null : "times")}
+                          className={`flex-1 flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative ${activePopover === 'times' ? 'bg-gray-50' : ''}`}
+                        >
+                          <Clock className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-brand-dark-green transition-colors" />
+                          <div className="flex flex-col text-left">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Select Time</span>
+                            <span className="text-sm font-bold text-brand-dark-green">
+                              {checkInTime.hour}:{checkInTime.minute} {checkInTime.period} - {checkOutTime.hour}:{checkOutTime.minute} {checkOutTime.period}
+                            </span>
+                          </div>
+
+                          {/* Time Picker Popover */}
+                          <AnimatePresence>
+                            {activePopover === "times" && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-full right-0 md:left-0 mt-2 w-[340px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 overflow-hidden"
+                              >
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-bold text-brand-dark-green text-sm flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-brand-gold" /> Select Booking Time
+                                  </h4>
+                                  <button onClick={() => setActivePopover(null)} className="p-1 hover:bg-gray-100 rounded-full">
+                                    <X className="w-4 h-4 text-gray-400" />
+                                  </button>
+                                </div>
+                                
+                                <div className="space-y-6">
+                                  {/* From Time Selector */}
+                                  <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-1">Arrival Time</label>
+                                    <div className="flex items-center gap-2">
+                                      {/* Hours Select */}
+                                      <select 
+                                        value={checkInTime.hour}
+                                        onChange={(e) => setCheckInTime({...checkInTime, hour: e.target.value})}
+                                        className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
+                                      >
+                                        {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
+                                          <option key={h} value={h} className="text-brand-dark-green">{h}</option>
+                                        ))}
+                                      </select>
+                                      <span className="font-bold text-gray-300">:</span>
+                                      {/* Minutes Select */}
+                                      <select 
+                                        value={checkInTime.minute}
+                                        onChange={(e) => setCheckInTime({...checkInTime, minute: e.target.value})}
+                                        className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
+                                      >
+                                        {["00", "15", "30", "45"].map(m => (
+                                          <option key={m} value={m} className="text-brand-dark-green">{m}</option>
+                                        ))}
+                                      </select>
+                                      {/* AM/PM PM Selector */}
+                                      <div className="flex p-0.5 bg-gray-100 rounded-lg">
+                                        {["AM", "PM"].map(p => (
+                                          <button
+                                            key={p}
+                                            onClick={() => setCheckInTime({...checkInTime, period: p})}
+                                            className={`px-3 py-1.5 text-[10px] font-black rounded-md transition-all ${checkInTime.period === p ? 'bg-white text-brand-dark-green shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                          >
+                                            {p}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* To Time Selector */}
+                                  <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-1">Departure Time</label>
+                                    <div className="flex items-center gap-2">
+                                      <select 
+                                        value={checkOutTime.hour}
+                                        onChange={(e) => setCheckOutTime({...checkOutTime, hour: e.target.value})}
+                                        className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
+                                      >
+                                        {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
+                                          <option key={h} value={h} className="text-brand-dark-green">{h}</option>
+                                        ))}
+                                      </select>
+                                      <span className="font-bold text-gray-300">:</span>
+                                      <select 
+                                        value={checkOutTime.minute}
+                                        onChange={(e) => setCheckOutTime({...checkOutTime, minute: e.target.value})}
+                                        className="flex-1 p-2 bg-white border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-gold text-sm font-bold shadow-sm text-brand-dark-green"
+                                      >
+                                        {["00", "15", "30", "45"].map(m => (
+                                          <option key={m} value={m} className="text-brand-dark-green">{m}</option>
+                                        ))}
+                                      </select>
+                                      <div className="flex p-0.5 bg-gray-100 rounded-lg">
+                                        {["AM", "PM"].map(p => (
+                                          <button
+                                            key={p}
+                                            onClick={() => setCheckOutTime({...checkOutTime, period: p})}
+                                            className={`px-3 py-1.5 text-[10px] font-black rounded-md transition-all ${checkOutTime.period === p ? 'bg-white text-brand-dark-green shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                          >
+                                            {p}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <button
+                                    onClick={() => setActivePopover(null)}
+                                    className="w-full bg-brand-dark-green text-white py-3 rounded-xl font-bold mt-2 hover:bg-black transition-all"
+                                  >
+                                    Confirm Time
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      {/* Search Button (Standard version for Desktop and Expanded Mobile) */}
+                      <button 
+                        onClick={handleSearch}
+                        className="bg-brand-dark-green hover:bg-black text-white px-8 py-2.5 md:py-0 rounded-lg font-bold transition-all flex items-center justify-center gap-2 active:scale-95 m-1"
+                      >
+                        <Search className="w-5 h-5" />
+                        <span className="md:inline">Search</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
@@ -509,43 +560,42 @@ export default function Home() {
           </div>
           
           <div className="flex-1 w-full max-w-xl">
-            <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden border-8 border-white/5 shadow-2xl skew-y-2 hover:skew-y-0 transition-transform duration-700">
-              <img src="/about.png" alt="Resort experience" className="w-full h-full object-cover object-center" />
+            <div className="relative aspect-[1/1] rounded-[2rem] overflow-hidden border-8 border-white/5 shadow-2xl skew-y-2 hover:skew-y-0 transition-transform duration-700">
+              <img src="/about.png" alt="Resort experience" className="w-full h-full object-cover object-top" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-dark-green/60 to-transparent" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Offers / Deals Section - Booking.com Look */}
+      {/* Mini Gallery Section */}
       <section className="py-16 px-4 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-dark-green mb-2">Explore SRR Resorts</h2>
-              <p className="text-gray-500">Discover the perfect spot for your next escape</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-brand-dark-green mb-2">Our Gallery</h2>
+              <p className="text-gray-500">Glimpse into the luxury, peace, and grand celebrations</p>
             </div>
-            <Link href="/services" className="text-brand-sunset-start font-bold flex items-center gap-1 hover:gap-2 transition-all">
-              See all deals <ArrowRight className="w-4 h-4" />
+            <Link href="/gallery" className="text-brand-sunset-start font-bold flex items-center gap-1 hover:gap-2 transition-all">
+              View full gallery <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { title: "Weekend Getaway", price: "Starts from ₹4,999", tag: "Most Popular", img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000&auto=format&fit=crop" },
-              { title: "Grand Wedding Package", price: "Custom Pricing", tag: "Special Event", img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop" },
-              { title: "Day Outing Relax", price: "Starts from ₹1,200", tag: "Limited Time", img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop" }
-            ].map((offer, idx) => (
-              <div key={idx} className="group relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 cursor-pointer">
-                <div className="h-64 relative overflow-hidden">
-                  <img src={offer.img} alt={offer.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                  <div className="absolute top-4 left-4 bg-brand-sunset-start text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg">
-                    {offer.tag}
-                  </div>
+              { title: "Luxury Rooms", category: "Rooms", img: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop" },
+              { title: "Grand Convention Hall", category: "Events", img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop" },
+              { title: "Swimming Pool", category: "Leisure", img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop" }
+            ].map((item, idx) => (
+              <div key={idx} className="group relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 cursor-pointer h-64 md:h-80">
+                <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark-green/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                  <span className="text-brand-gold text-xs font-bold uppercase tracking-widest mb-1">{item.category}</span>
+                  <h3 className="text-white text-xl font-bold">{item.title}</h3>
                 </div>
-                <div className="p-6 bg-white">
-                  <h3 className="font-bold text-xl text-brand-dark-green mb-1">{offer.title}</h3>
-                  <p className="text-sm font-bold text-brand-sunset-start">{offer.price}</p>
+                {/* Tag Always visible until hover */}
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-brand-dark-green uppercase tracking-tighter shadow-sm group-hover:hidden transition-all">
+                  {item.category}
                 </div>
               </div>
             ))}
@@ -627,29 +677,29 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl"
+              className="relative bg-white w-[92%] max-w-lg max-h-[85vh] md:max-h-none rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
             >
               <button 
                 onClick={() => setSelectedQuickView(null)}
-                className="absolute top-6 right-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-brand-dark-green transition-all z-10"
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-brand-dark-green transition-all z-10"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
 
-              <div className="h-48 relative">
+              <div className="h-32 md:h-48 relative shrink-0">
                 <img src={selectedQuickView.img} className="w-full h-full object-cover" alt={selectedQuickView.title} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-8">
-                  <h3 className="text-3xl font-bold text-white">{selectedQuickView.title}</h3>
-                  <p className="text-brand-gold font-bold text-sm tracking-widest uppercase">{selectedQuickView.count}</p>
+                <div className="absolute bottom-4 left-6 md:bottom-6 md:left-8">
+                  <h3 className="text-xl md:text-3xl font-bold text-white">{selectedQuickView.title}</h3>
+                  <p className="text-brand-gold font-bold text-xs md:text-sm tracking-widest uppercase">{selectedQuickView.count}</p>
                 </div>
               </div>
 
-              <div className="p-8 md:p-10">
-                <h4 className="text-brand-dark-green font-bold text-lg mb-6 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-brand-gold" /> Service Highlights
+              <div className="p-6 md:p-10 overflow-y-auto no-scrollbar">
+                <h4 className="text-brand-dark-green font-bold text-base md:text-lg mb-4 md:mb-6 flex items-center gap-2">
+                  <Info className="w-4 h-4 md:w-5 md:h-5 text-brand-gold" /> Service Highlights
                 </h4>
-                <div className="grid grid-cols-1 gap-4 mb-10">
+                <div className="grid grid-cols-1 gap-2.5 md:gap-4 mb-6 md:mb-10">
                   {selectedQuickView.points.map((point, i) => (
                     <motion.div 
                       key={i}
@@ -658,8 +708,8 @@ export default function Home() {
                       transition={{ delay: i * 0.05 + 0.3 }}
                       className="flex items-center gap-3"
                     >
-                      <CheckCircle2 className="w-5 h-5 text-brand-gold shrink-0" />
-                      <span className="text-gray-600 font-medium">{point}</span>
+                      <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-brand-gold shrink-0" />
+                      <span className="text-gray-600 font-medium text-sm md:text-base">{point}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -678,9 +728,9 @@ export default function Home() {
                     });
                     router.push(`/services?${params.toString()}`);
                   }}
-                  className="w-full bg-sunset-gradient text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-brand-sunset-start/20 hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-sunset-gradient text-white py-3 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-xl shadow-brand-sunset-start/20 hover:opacity-90 transition-all flex items-center justify-center gap-2"
                 >
-                  Book This Service <ArrowRight className="w-5 h-5" />
+                  Book This Service <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
 
                 <p className="text-center text-xs text-gray-400 mt-6 flex items-center justify-center gap-1">

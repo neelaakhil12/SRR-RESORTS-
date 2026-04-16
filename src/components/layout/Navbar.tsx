@@ -9,6 +9,28 @@ import { motion, AnimatePresence } from "framer-motion";
 export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Scroll detection for mobile bottom nav
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      // Hide on scroll
+      setIsVisible(false);
+      
+      // Clear previous timeout and set a new one to show on stop
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setIsVisible(true);
+      }, 700); // 700ms delay after stop
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   // Close menu when route changes
   useEffect(() => {
@@ -40,10 +62,11 @@ export function Navbar() {
   ];
 
   return (
+    <>
     <header className="z-50 w-full sticky top-0 bg-brand-dark-green shadow-lg">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Top Header Bar */}
-        <div className="flex h-16 md:h-20 items-center justify-between">
+        <div className="flex h-16 lg:h-20 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 relative z-[60]">
               <img 
@@ -55,7 +78,7 @@ export function Navbar() {
           </div>
           
           {/* Desktop Links (Main) */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-6">
             <Link 
               href="/login" 
               className="text-sm font-bold text-white hover:text-brand-gold transition-colors"
@@ -69,20 +92,21 @@ export function Navbar() {
               List your inquiry
             </Link>
           </div>
-          
-          {/* Mobile Menu Toggle */}
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden relative z-[60] p-2 text-white"
-            aria-label="Toggle Menu"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+
+          {/* Mobile Login Button (Re-added per request) */}
+          <div className="lg:hidden">
+            <Link 
+              href="/login" 
+              className="text-xs font-bold text-white bg-white/10 border border-white/20 px-4 py-2 rounded-lg active:scale-95 transition-all"
+            >
+              Login
+            </Link>
+          </div>
         </div>
 
         {/* Categories Bar (Desktop only, similar to Booking.com sub-nav) */}
         {!isOpen && (
-          <nav className="hidden md:flex justify-end gap-2 pb-4">
+          <nav className="hidden lg:flex justify-end gap-2 pb-4">
             {navLinks.map((link) => (
               <Link 
                 key={link.name}
@@ -141,5 +165,54 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </header>
+
+    {/* Mobile Bottom Navigation Bar (Smart visibility) */}
+    <AnimatePresence>
+      {!isOpen && isVisible && (
+        <motion.div
+          initial={{ y: 100, x: 0, opacity: 0 }}
+          animate={{ y: 0, x: 0, opacity: 1 }}
+          exit={{ y: 100, x: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden"
+        >
+          <div className="bg-brand-dark-green border-t border-white/10 flex items-stretch justify-between overflow-hidden">
+            {/* Horizontal Scrollable Container */}
+            <div className="flex-1 overflow-x-auto no-scrollbar flex items-center px-2">
+              <div className="flex items-center gap-0 whitespace-nowrap">
+                {[
+                  { name: "Home", href: "/", icon: Bed },
+                  { name: "Services", href: "/services", icon: Building2 },
+                  { name: "About", href: "/about", icon: PartyPopper },
+                  { name: "Contact", href: "/contact", icon: ArrowRight },
+                  { name: "Gallery", href: "/gallery", icon: Waves },
+                ].map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`flex flex-col items-center justify-center gap-1.5 min-w-[85px] px-2 py-4 text-[11px] font-extrabold transition-all active:scale-95 ${pathname === link.href ? 'text-brand-gold' : 'text-white/70 hover:text-white'}`}
+                  >
+                    <link.icon className={`w-6 h-6 ${pathname === link.href ? 'text-brand-gold' : 'text-white/70'}`} />
+                    <span>{link.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    
+    <style jsx global>{`
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    `}</style>
+    </>
   );
 }
