@@ -80,7 +80,7 @@ const SERVICES_DETAILS = [
   },
   { 
     id: "LEISURE",
-    title: "Leisure Activities", 
+    title: "Sports & Leisure Activities", 
     count: "Multiple", 
     icon: Waves, 
     img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop",
@@ -175,7 +175,7 @@ export default function Home() {
                     {serviceType === 'Luxury Rooms' && <Building2 className="w-5 h-5" />}
                     {serviceType === 'Independent Houses' && <HomeIcon className="w-5 h-5" />}
                     {serviceType === 'Convention Hall' && <Calendar className="w-5 h-5" />}
-                    {serviceType === 'Leisure Activities' && <Waves className="w-5 h-5" />}
+                    {serviceType === 'Sports & Leisure Activities' && <Waves className="w-5 h-5" />}
                     {serviceType === 'Select Service' && <Plus className="w-5 h-5" />}
                   </div>
                   <div className="flex flex-col text-left flex-1">
@@ -202,7 +202,7 @@ export default function Home() {
                           { name: 'Luxury Rooms', icon: Building2, desc: '12 premium rooms across 3 floors' },
                           { name: 'Independent Houses', icon: HomeIcon, desc: 'Private stays with bonfire & water body' },
                           { name: 'Convention Hall', icon: Calendar, desc: '1000+ capacity for grand events' },
-                          { name: 'Leisure Activities', icon: Waves, desc: 'Pool & Box Cricket for day visitors' }
+                          { name: 'Sports & Leisure Activities', icon: Waves, desc: 'Pool & Box Cricket for day visitors' }
                         ].map((item) => (
                           <div
                             key={item.name}
@@ -510,7 +510,7 @@ export default function Home() {
           
           <div className="flex-1 w-full max-w-xl">
             <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden border-8 border-white/5 shadow-2xl skew-y-2 hover:skew-y-0 transition-transform duration-700">
-              <img src="/hero.png" alt="Resort experience" className="w-full h-full object-cover" />
+              <img src="/about.png" alt="Resort experience" className="w-full h-full object-cover object-center" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-dark-green/60 to-transparent" />
             </div>
           </div>

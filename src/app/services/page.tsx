@@ -64,7 +64,7 @@ const SERVICES = [
   },
   {
     id: "LEISURE",
-    name: "Leisure Activities",
+    name: "Sports & Leisure Activities",
     description: "Perfect for day visitors! Enjoy our professional-grade sports facilities and swimming pool. Available for individual and group bookings.",
     features: ["Swimming Pool", "Box Cricket"],
     image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop",
@@ -131,7 +131,8 @@ function ServicesContent() {
         "independent-houses": "HOUSE",
         "convention-hall": "HALL",
         "sports-&-outdoor-activities": "LEISURE",
-        "leisure-activities": "LEISURE"
+        "leisure-activities": "LEISURE",
+        "sports-&-leisure-activities": "LEISURE"
       };
 
       const serviceId = typeMap[type];
