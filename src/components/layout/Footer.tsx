@@ -3,11 +3,11 @@ import { MapPin, Phone, Mail, MessageSquare } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-black text-white/70 py-10 md:py-16 mt-auto border-t border-white/10">
+    <footer className="bg-[#0b1a10] text-white/70 py-12 md:py-20 mt-auto border-t border-brand-gold/20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand Column */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             <Link href="/" className="inline-block">
               <img 
                 src="/logo.png" 
@@ -15,15 +15,15 @@ export function Footer() {
                 className="h-20 md:h-32 w-auto object-contain brightness-110"
               />
             </Link>
-            <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
-              SRR Resort and Convention is your premium destination for peaceful luxury, family stays, and grand celebrations. Purity you can trust in every experience.
+            <p className="text-sm leading-relaxed text-gray-400">
+              Your premium destination for peaceful luxury and grand celebrations. Purity you can trust in every experience.
             </p>
-            <div className="flex pt-2">
+            <div className="flex gap-4">
               <a 
-                href="https://www.instagram.com/srr.resort?igsh=MWk3cWhsOHBsY3pv" 
+                href="https://www.instagram.com/srr.resort" 
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-rose-400 shadow-sm border border-white/10 hover:bg-white/10 transition-colors"
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all border border-white/10"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -35,6 +35,7 @@ export function Footer() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="text-white"
                 >
                   <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
@@ -45,31 +46,30 @@ export function Footer() {
           </div>
           
           {/* Quick Links */}
-          <div className="space-y-6">
-            <h4 className="font-bold text-brand-gold text-lg tracking-tight">Quick Links</h4>
+          <div className="space-y-8">
+            <h4 className="font-bold text-white text-base tracking-tight">Quick Links</h4>
             <ul className="space-y-4">
-              <li><Link href="/" className="text-gray-300 hover:text-brand-gold transition-colors">Home</Link></li>
-              <li><Link href="/services" className="text-gray-300 hover:text-brand-gold transition-colors">Our Services</Link></li>
-              <li><Link href="/about" className="text-gray-300 hover:text-brand-gold transition-colors">About Us</Link></li>
-              <li><Link href="/contact" className="text-gray-300 hover:text-brand-gold transition-colors">Contact Us</Link></li>
-              <li><Link href="/dashboard" className="text-gray-300 hover:text-brand-gold transition-colors">Your Bookings</Link></li>
+              <li><Link href="/" className="text-sm hover:text-brand-gold transition-colors">Home</Link></li>
+              <li><Link href="/services" className="text-sm hover:text-brand-gold transition-colors">Our Services</Link></li>
+              <li><Link href="/about" className="text-sm hover:text-brand-gold transition-colors">About Us</Link></li>
+              <li><Link href="/contact" className="text-sm hover:text-brand-gold transition-colors">Contact Us</Link></li>
             </ul>
           </div>
           
           {/* Services Column */}
-          <div className="space-y-6">
-            <h4 className="font-bold text-brand-gold text-lg tracking-tight">Our Services</h4>
-            <ul className="space-y-4 text-gray-300">
-              <li><Link href="/services" className="hover:text-brand-gold transition-colors">Luxury Rooms</Link></li>
-              <li><Link href="/services" className="hover:text-brand-gold transition-colors">Independent Houses</Link></li>
-              <li><Link href="/services" className="hover:text-brand-gold transition-colors">Convention Hall</Link></li>
-              <li><Link href="/services" className="hover:text-brand-gold transition-colors">Leisure & Relaxation Activities</Link></li>
+          <div className="space-y-8">
+            <h4 className="font-bold text-white text-base tracking-tight">Services</h4>
+            <ul className="space-y-4">
+              <li><Link href="/services?type=rooms" className="text-sm hover:text-brand-gold transition-colors">Luxury Rooms</Link></li>
+              <li><Link href="/services?type=houses" className="text-sm hover:text-brand-gold transition-colors">Independent Houses</Link></li>
+              <li><Link href="/services?type=hall" className="text-sm hover:text-brand-gold transition-colors">Convention Hall</Link></li>
+              <li><Link href="/services?type=leisure" className="text-sm hover:text-brand-gold transition-colors">Leisure Activities</Link></li>
             </ul>
           </div>
           
           {/* Contact Details Column */}
-          <div className="space-y-6">
-            <h4 className="font-bold text-brand-gold text-lg tracking-tight">Contact Us</h4>
+          <div className="space-y-8">
+            <h4 className="font-bold text-white text-base tracking-tight">Contact Us</h4>
             <ul className="space-y-5">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-brand-gold shrink-0 mt-0.5" />
@@ -87,8 +87,8 @@ export function Footer() {
                 <span className="text-sm text-gray-300">srrresorts@gmail.com</span>
               </li>
               <li className="flex items-center gap-3 pt-2">
-                <button className="flex items-center gap-2 text-green-400 font-medium hover:text-green-500 transition-colors">
-                  <MessageSquare className="w-6 h-6 fill-green-500/20 text-green-400" />
+                <button className="flex items-center gap-2 text-brand-gold font-bold hover:opacity-80 transition-opacity">
+                  <MessageSquare className="w-5 h-5" />
                   <span>Chat with us</span>
                 </button>
               </li>

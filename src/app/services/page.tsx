@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
 import { 
@@ -28,42 +30,60 @@ const FLOORS = [
 ];
 
 const HOUSE_CLUSTERS = [
-  { name: "Cluster A (Houses 1-3)", houses: ["House 1", "House 2", "House 3"] },
-  { name: "Cluster B (Houses 4-6)", houses: ["House 4", "House 5", "House 6"] }
+  { name: "Cluster A (Houses 1-3) - Bonfire", houses: ["House 1", "House 2", "House 3"] },
+  { name: "Cluster B (Houses 4-6) - Foot Pool", houses: ["House 4", "House 5", "House 6"] }
 ];
 
 const SERVICES = [
   {
     id: "ROOM",
-    name: "Luxury Room Booking",
+    name: "Luxury Rooms",
     description: "Experience absolute comfort in our 12 premium luxury rooms. Choose your preferred floor and room to secure your perfect stay.",
-    features: ["Room-wise selection (A1-C4)", "Premium amenities", "Scenic views", "24/7 Room Service"],
-    image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop"
+    features: ["Room-wise selection (A1-C4)", "Premium amenities", "Swimming pool access", "Box cricket access"],
+    image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop",
+    price: 2500,
+    priceUnit: "Room"
   },
   {
     id: "HOUSE",
     name: "Independent Houses",
-    description: "Book one of our 6 exclusive independent houses. Set in nature, every cluster of three houses shares a private bonfire and a serene water body.",
-    features: ["Private accommodations", "Shared bonfire pit", "Water body access", "Nature immersed"],
-    image: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop"
+    description: "Book one of our 6 exclusive independent houses. Set in nature, Cluster A (Houses 1-3) features a private bonfire, and Cluster B (Houses 4-6) features a premium foot pool.",
+    features: ["Private accommodations", "Bonfire (Cluster A)", "Foot Pool (Cluster B)", "Swimming pool access", "Box cricket access"],
+    image: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop",
+    price: 3000,
+    priceUnit: "House"
   },
   {
     id: "HALL",
-    name: "Grand Function Hall & Convention",
+    name: "Convention Hall",
     description: "Host your weddings, corporate events, and parties in our exclusive function hall. We guarantee complete privacy by booking only one event at a time.",
-    features: ["Large seating capacity", "Customizable decor", "Catering options", "Dedicated entrance"],
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop"
+    features: ["1000 seating capacity", "Garden", "Timings: 12 hours"],
+    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop",
+    price: null,
+    priceUnit: "Event"
   },
   {
     id: "LEISURE",
-    name: "Leisure & Relaxation",
-    description: "Unwind by the pool, enjoy indoor activities, and experience modern leisure amenities designed to rejuvenate your mind and body.",
-    features: ["Indoor Games", "Swimming Pool", "Nature Walks", "Large dining area for family"],
-    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop"
+    name: "Leisure Activities",
+    description: "Perfect for day visitors! Enjoy our professional-grade sports facilities and swimming pool. Available for individual and group bookings.",
+    features: ["Swimming Pool", "Box Cricket"],
+    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop",
+    price: 350,
+    priceUnit: "Hour"
   }
 ];
 
 export default function ServicesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <ServicesContent />
+    </Suspense>
+  );
+}
+
+function ServicesContent() {
+  const searchParams = useSearchParams();
+  const today = new Date().toISOString().split('T')[0];
   const [activeModal, setActiveModal] = useState<BookingMode>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,10 +94,81 @@ export default function ServicesPage() {
     phone: "",
     email: "",
     date: "",
+    checkOutDate: "",
     time: "",
+    durationHours: 1,
+    houseBookingType: "individual" as "individual" | "cluster",
     items: [] as string[],
     aadharFile: null as File | null
   });
+
+  const calculateTotal = () => {
+    if (activeModal === 'ROOM') return formData.items.length * 2500;
+    if (activeModal === 'HOUSE') {
+      if (formData.houseBookingType === 'cluster') return 8000;
+      return formData.items.length * 3000;
+    }
+    if (activeModal === 'LEISURE') {
+      let rate = 0;
+      if (formData.items.includes('Box Cricket')) rate += 350;
+      if (formData.items.includes('Swimming Pool')) rate += 400;
+      return rate * formData.durationHours;
+    }
+    return 0;
+  };
+
+  // Handle auto-opening from Search
+  useEffect(() => {
+    const type = searchParams.get("type");
+    const checkIn = searchParams.get("checkIn");
+    const checkOut = searchParams.get("checkOut");
+    const checkInTime = searchParams.get("checkInTime");
+    const checkOutTime = searchParams.get("checkOutTime");
+
+    if (type) {
+      const typeMap: Record<string, BookingMode> = {
+        "luxury-rooms": "ROOM",
+        "independent-houses": "HOUSE",
+        "convention-hall": "HALL",
+        "sports-&-outdoor-activities": "LEISURE",
+        "leisure-activities": "LEISURE"
+      };
+
+      const serviceId = typeMap[type];
+      if (serviceId) {
+        setActiveModal(serviceId);
+        
+        let formattedCheckIn = "";
+        let formattedCheckOut = "";
+        if (checkIn && checkOut) {
+          formattedCheckIn = checkIn;
+          formattedCheckOut = checkOut;
+        } else if (checkIn) {
+          formattedCheckIn = checkIn;
+        }
+
+        let formattedTime = "";
+        if (checkInTime) {
+          // Convert "10:00 AM" to "10:00" or "06:00 PM" to "18:00"
+          const [timePart, period] = checkInTime.split(" ");
+          if (timePart && period) {
+            let [hours, minutes] = timePart.split(":");
+            let h = parseInt(hours);
+            if (period === "PM" && h < 12) h += 12;
+            if (period === "AM" && h === 12) h = 0;
+            formattedTime = `${h.toString().padStart(2, "0")}:${minutes}`;
+          }
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          date: formattedCheckIn,
+          checkOutDate: formattedCheckOut,
+          time: formattedTime
+        }));
+      }
+    }
+  }, [searchParams]);
 
   const handleBookNow = (serviceId: string) => {
     setFormData({
@@ -85,7 +176,10 @@ export default function ServicesPage() {
       phone: "",
       email: "",
       date: "",
+      checkOutDate: "",
       time: "",
+      durationHours: 1,
+      houseBookingType: "individual",
       items: [],
       aadharFile: null
     });
@@ -104,7 +198,32 @@ export default function ServicesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would send to an API
+    
+    const serviceName = SERVICES.find(s => s.id === activeModal)?.name || "Service";
+    const itemsList = formData.items.length > 0 ? formData.items.join(", ") : "None selected";
+    const totalPrice = calculateTotal();
+    
+    // Construct WhatsApp message
+    let message = `*SRR Resorts Booking Request*\n\n`;
+    message += `*Name:* ${formData.name}\n`;
+    message += `*Phone:* ${formData.phone}\n`;
+    message += `*Service:* ${serviceName}\n`;
+    message += `*Check-in:* ${formData.date}\n`;
+    if (formData.checkOutDate) message += `*Check-out:* ${formData.checkOutDate}\n`;
+    if (activeModal !== 'HALL') {
+      message += `*Time:* ${formData.time}\n`;
+    } else {
+      message += `*Duration:* Full Day (12 Hour Slot)\n`;
+    }
+    message += `*Selections:* ${itemsList}\n`;
+    if (activeModal === 'LEISURE') message += `*Duration:* ${formData.durationHours} Hours\n`;
+    if (totalPrice > 0) message += `*Estimated Total:* ₹${totalPrice.toLocaleString()}\n`;
+    
+    const whatsappUrl = `https://wa.me/917702199889?text=${encodeURIComponent(message)}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
+    
     setIsSuccess(true);
   };
 
@@ -281,44 +400,116 @@ export default function ServicesPage() {
                     <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">3. Booking Details</h4>
                     
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Select Date</label>
-                        <div className="relative">
-                          <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input 
-                            required 
-                            type="date" 
-                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-sunset-start outline-none transition-all"
-                            value={formData.date}
-                            onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">
+                            {activeModal === 'ROOM' || activeModal === 'HOUSE' ? 'Check-in Date' : 'Select Date'}
+                          </label>
+                          <div className="relative">
+                            <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                              required 
+                              type="date" 
+                              min={today}
+                              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-sunset-start outline-none transition-all"
+                              value={formData.date}
+                              onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      {activeModal === 'HALL' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(activeModal === 'ROOM' || activeModal === 'HOUSE') && (
                           <div className="space-y-2">
-                            <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Available Time</label>
+                            <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Check-out Date</label>
                             <div className="relative">
-                              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                               <input 
                                 required 
-                                type="time" 
+                                type="date" 
+                                min={formData.date || today}
                                 className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-sunset-start outline-none transition-all"
-                                value={formData.time}
-                                onChange={(e) => setFormData({...formData, time: e.target.value})}
+                                value={formData.checkOutDate}
+                                onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})}
                               />
                             </div>
                           </div>
-                          <div className="flex items-end pb-3">
-                             <div className="flex items-center gap-2 text-[10px] text-gray-400 bg-gray-50 p-3 rounded-lg w-full">
-                               <ShieldCheck className="w-3 h-3 text-brand-gold" /> Exclusive Event Access
+                        )}
+                      </div>
+
+                      {activeModal === 'HALL' && (
+                        <div className="flex items-end pb-3 w-full">
+                           <div className="flex items-center gap-2 text-xs text-brand-sunset-start bg-brand-sunset-start/5 p-4 rounded-xl w-full border border-brand-sunset-start/10">
+                             <ShieldCheck className="w-5 h-5" /> 
+                             <div className="flex flex-col">
+                               <span className="font-bold">Full Day Booking (12 Hours)</span>
+                               <span className="opacity-70 text-[10px]">Exclusive access for your grand event</span>
                              </div>
+                           </div>
+                        </div>
+                      )}
+
+                      {activeModal === 'HOUSE' && (
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Booking Type</label>
+                          <div className="flex gap-2 p-1 bg-gray-50 rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setFormData({...formData, houseBookingType: 'individual', items: []})}
+                              className={`flex-1 py-3 px-2 text-center rounded-lg transition-all border ${formData.houseBookingType === 'individual' ? 'bg-white shadow-md border-brand-sunset-start text-brand-dark-green' : 'bg-gray-50 border-transparent text-gray-400'}`}
+                            >
+                              <div className="text-xs font-bold">Individual House</div>
+                              <div className="text-[10px] opacity-60">₹3,000 / House</div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({...formData, houseBookingType: 'cluster', items: []})}
+                              className={`flex-1 py-3 px-2 text-center rounded-lg transition-all border ${formData.houseBookingType === 'cluster' ? 'bg-white shadow-md border-brand-sunset-start text-brand-dark-green' : 'bg-gray-50 border-transparent text-gray-400'}`}
+                            >
+                              <div className="text-xs font-bold">Full Cluster</div>
+                              <div className="text-[10px] opacity-60">₹8,000 / 3 Houses</div>
+                            </button>
+                          </div>
+                          {formData.houseBookingType === 'cluster' && (
+                            <p className="text-[10px] text-brand-sunset-start font-bold text-center">Save ₹1,000 by booking a full cluster!</p>
+                          )}
+                        </div>
+                      )}
+
+                      {activeModal === 'LEISURE' && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Select Activities</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {['Swimming Pool', 'Box Cricket'].map(act => (
+                                <button
+                                  key={act}
+                                  type="button"
+                                  onClick={() => toggleItem(act)}
+                                  className={`py-3 text-xs font-bold rounded-lg transition-all border ${formData.items.includes(act) ? 'bg-brand-dark-green text-white border-brand-dark-green' : 'bg-white text-brand-dark-green border-gray-100'}`}
+                                >
+                                  {act}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between ml-1">
+                              <label className="text-xs font-bold text-brand-dark-green/60 uppercase">Duration (Hours)</label>
+                              <span className="text-xs font-bold text-brand-dark-green">{formData.durationHours} hr</span>
+                            </div>
+                            <input 
+                              type="range"
+                              min="1"
+                              max="6"
+                              className="w-full accent-brand-dark-green"
+                              value={formData.durationHours}
+                              onChange={(e) => setFormData({...formData, durationHours: parseInt(e.target.value)})}
+                            />
                           </div>
                         </div>
                       )}
 
-                      {(activeModal === 'ROOM' || activeModal === 'HOUSE') && (
+                      {(activeModal === 'ROOM' || (activeModal === 'HOUSE' && formData.houseBookingType === 'individual')) && (
                         <div className="space-y-4">
                           <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Available Slots</label>
                           <div className="max-h-60 overflow-y-auto pr-2 space-y-4">
@@ -366,9 +557,33 @@ export default function ServicesPage() {
                           </div>
                         </div>
                       )}
+
+                      {activeModal === 'HOUSE' && formData.houseBookingType === 'cluster' && (
+                        <div className="space-y-4">
+                          <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Select Cluster</label>
+                          <div className="grid grid-cols-1 gap-2">
+                            {HOUSE_CLUSTERS.map(cluster => (
+                              <button
+                                key={cluster.name}
+                                type="button"
+                                onClick={() => setFormData({...formData, items: [cluster.name]})}
+                                className={`p-4 text-xs font-bold rounded-xl transition-all border text-left ${formData.items.includes(cluster.name) ? 'bg-brand-dark-green text-white border-brand-dark-green shadow-md' : 'bg-white text-brand-dark-green border-gray-100'}`}
+                              >
+                                {cluster.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-6 relative">
+                       {calculateTotal() > 0 && (
+                         <div className="flex items-center justify-between mb-4 p-4 bg-brand-dark-green/5 rounded-2xl border border-brand-dark-green/10">
+                           <span className="text-sm font-bold text-brand-dark-green">Estimated Total</span>
+                           <span className="text-xl font-bold text-brand-sunset-start">₹{calculateTotal().toLocaleString()}</span>
+                         </div>
+                       )}
                        <button 
                          type="submit"
                          className="w-full bg-sunset-gradient text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-brand-sunset-start/20 hover:opacity-90 transition-all active:scale-[0.98]"
@@ -386,6 +601,37 @@ export default function ServicesPage() {
           </div>
         </div>
       )}
+      {/* Success Animation overlay */}
+      <AnimatePresence>
+        {isSuccess && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-brand-dark-green/90 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-3xl p-8 md:p-12 text-center max-w-sm w-full shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-brand-dark-green mb-2">Booking Requested!</h3>
+              <p className="text-gray-600 mb-8">
+                Your request has been sent for verification. We will contact you shortly via WhatsApp or Phone.
+              </p>
+              <button 
+                onClick={() => setIsSuccess(false)}
+                className="w-full bg-brand-dark-green text-white py-4 rounded-xl font-bold hover:bg-brand-green transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

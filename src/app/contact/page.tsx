@@ -72,6 +72,33 @@ export default function ContactPage() {
             </button>
           </form>
         </div>
+
+        {/* Google Maps Section */}
+        <div className="mt-20">
+          <h3 className="text-2xl font-bold text-brand-dark-green mb-6 text-center">Find Us on Google Maps</h3>
+          <div className="bg-white p-4 rounded-3xl shadow-xl border border-black/5 overflow-hidden ring-1 ring-brand-gold/20">
+            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-100">
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3810.1257177651065!2d78.8988358!3d17.2514336!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcba95193c72e27%3A0xe67f9600a9486c43!2sSRR%20Resorts%20%26%20Convention!5e0!3m2!1sen!2sin!4v1713251234567!5m2!1sen!2sin" 
+                className="absolute inset-0 w-full h-full border-0"
+                allowFullScreen={true}
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+          </div>
+          <div className="mt-8 text-center">
+            <a 
+              href="https://maps.app.goo.gl/M4cE2zspb1Hbno3L9?g_st=ic" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-brand-dark-green hover:bg-black text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95"
+            >
+              <MapPin className="w-5 h-5 text-brand-gold" />
+              Open in Google Maps
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

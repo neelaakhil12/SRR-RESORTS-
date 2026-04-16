@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, Bed, Building2, PartyPopper, Waves } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Navbar() {
   const pathname = usePathname();
-  const isHome = pathname === "/";
   const [isOpen, setIsOpen] = useState(false);
 
   // Close menu when route changes
@@ -28,118 +27,115 @@ export function Navbar() {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Services", href: "/services" },
-    { name: "Gallery", href: "/gallery" },
     { name: "About", href: "/about" },
+    { name: "Gallery", href: "/gallery" },
     { name: "Contact", href: "/contact" },
   ];
 
+  const categories = [
+    { name: "Stays", href: "/services?type=stays", icon: Bed },
+    { name: "Convention", href: "/services?type=convention", icon: Building2 },
+    { name: "Events", href: "/services?type=events", icon: PartyPopper },
+    { name: "Leisure", href: "/services?type=leisure", icon: Waves },
+  ];
+
   return (
-    <header className={`z-50 w-full bg-black border-b border-white/10 ${isHome ? 'absolute top-0' : 'sticky top-0'}`}>
-      <div className={`mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 ${isHome ? 'h-24 md:h-28' : 'h-16 md:h-20'}`}>
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 relative z-[60]">
-            <img 
-              src="/logo.png" 
-              alt="SRR Resorts Logo" 
-              className={`${isHome ? 'h-20 md:h-36' : 'h-16 md:h-24'} w-auto object-contain transition-all duration-300`}
-            />
-          </Link>
-        </div>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex gap-8">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name}
-              href={link.href} 
-              className={`text-sm font-medium hover:text-brand-sunset-start transition-colors ${pathname === link.href ? 'text-brand-sunset-start' : 'text-white/90'}`}
-            >
-              {link.name}
+    <header className="z-50 w-full sticky top-0 bg-brand-dark-green shadow-lg">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Top Header Bar */}
+        <div className="flex h-16 md:h-20 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 relative z-[60]">
+              <img 
+                src="/logo.png" 
+                alt="SRR Resorts Logo" 
+                className="h-16 md:h-28 w-auto object-contain transition-all duration-300 transform translate-y-2 md:translate-y-4" 
+              />
             </Link>
-          ))}
-        </nav>
-        
-        <div className="hidden md:flex items-center gap-6">
-          <Link 
-            href="/login" 
-            className="text-sm font-medium text-white/90 hover:text-brand-sunset-start transition-colors"
+          </div>
+          
+          {/* Desktop Links (Main) */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link 
+              href="/login" 
+              className="text-sm font-bold text-white hover:text-brand-gold transition-colors"
+            >
+              Log in / Register
+            </Link>
+            <Link
+              href="/services"
+              className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-bold text-white transition-all"
+            >
+              List your inquiry
+            </Link>
+          </div>
+          
+          {/* Mobile Menu Toggle */}
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden relative z-[60] p-2 text-white"
+            aria-label="Toggle Menu"
           >
-            Log in
-          </Link>
-          <Link
-            href="/services"
-            className="rounded-full bg-sunset-gradient px-6 py-2.5 text-sm font-medium text-white shadow-md hover:opacity-90 transition-opacity"
-          >
-            Book Now
-          </Link>
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
-        
-        {/* Mobile Menu Toggle */}
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden relative z-[60] p-2 text-white hover:text-brand-gold transition-colors"
-          aria-label="Toggle Menu"
-        >
-          {isOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
-        </button>
+
+        {/* Categories Bar (Desktop only, similar to Booking.com sub-nav) */}
+        {!isOpen && (
+          <nav className="hidden md:flex justify-end gap-2 pb-4">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.name}
+                href={link.href}
+                className={`px-4 py-2 rounded-full border border-transparent text-sm font-bold transition-all hover:bg-white/20 ${pathname === link.href ? 'bg-white/20 border-white/40 text-white' : 'text-white hover:text-brand-gold'}`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
 
       {/* Mobile Navigation Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, x: "100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 bg-black flex flex-col pt-32 px-10 md:hidden"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-50 bg-brand-dark-green flex flex-col pt-24 px-6 md:hidden"
           >
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-sunset-start opacity-10 rounded-full blur-[100px] -mr-32 -mt-32" />
-            
-            <nav className="flex flex-col gap-6 relative z-10">
-              {navLinks.map((link, idx) => (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + idx * 0.1 }}
+            <nav className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <Link
                   key={link.name}
+                  href={link.href}
+                  className="text-lg font-bold text-white border-b border-white/10 py-3"
                 >
-                  <Link
-                    href={link.href}
-                    className={`text-xl md:text-2xl font-bold transition-all ${pathname === link.href ? 'text-brand-sunset-start pl-4 border-l-4 border-brand-sunset-start' : 'text-white/70 hover:text-white'}`}
-                  >
-                    {link.name}
-                  </Link>
-                </motion.div>
+                  {link.name}
+                </Link>
               ))}
+              <div className="pt-6 grid grid-cols-2 gap-4">
+                {categories.map((cat) => (
+                  <Link 
+                    key={cat.name}
+                    href={cat.href}
+                    className="flex flex-col items-center gap-2 p-4 bg-white/5 rounded-xl border border-white/10"
+                  >
+                    <cat.icon className="w-6 h-6 text-brand-gold" />
+                    <span className="text-xs text-white font-medium">{cat.name}</span>
+                  </Link>
+                ))}
+              </div>
             </nav>
 
-            <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.6 }}
-               className="mt-10 space-y-3 relative z-10"
-            >
-              <Link
-                href="/services"
-                className="flex items-center justify-between w-full bg-sunset-gradient text-white px-5 py-3 rounded-lg font-bold text-base shadow-xl active:scale-95 transition-all"
-              >
-                Book Now <ArrowRight className="w-5 h-5" />
-              </Link>
+            <div className="mt-10 space-y-4">
               <Link
                 href="/login"
-                className="block text-center w-full bg-white/5 border border-white/10 text-white/70 px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-white/10 transition-all"
+                className="block text-center w-full bg-white text-brand-dark-green py-3 rounded-lg font-bold"
               >
-                Log in
+                Sign in
               </Link>
-            </motion.div>
-
-            <div className="mt-auto pb-12 text-center relative z-10">
-               <p className="text-white/30 text-xs font-bold uppercase tracking-widest leading-loose">
-                 SRR Resorts & Convention <br/>
-                 Purity You Can Trust
-               </p>
             </div>
           </motion.div>
         )}

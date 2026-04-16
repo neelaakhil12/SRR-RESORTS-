@@ -12,8 +12,10 @@ export const metadata: Metadata = {
   description: "Experience luxury and comfort at SRR Resorts & Convention. Book your stay or event today.",
 };
 
+import { RootWrapper } from "@/components/layout/RootWrapper";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 
 export default function RootLayout({
   children,
@@ -26,11 +28,14 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased bg-background text-foreground`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex flex-col">
-          {children}
-        </main>
-        <Footer />
+        <RootWrapper>
+          <Navbar />
+          <main className="flex-1 flex flex-col">
+            {children}
+          </main>
+          <Footer />
+          <WhatsAppButton />
+        </RootWrapper>
       </body>
     </html>
   );

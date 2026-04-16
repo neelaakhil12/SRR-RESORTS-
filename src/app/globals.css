@@ -10,9 +10,13 @@
   --srr-gold: #D4AF37;
   --srr-black: #111111;
   --srr-white: #FFFFFF;
+  --srr-light-gray: #F5F5F5;
 
   --background: var(--srr-cream);
   --foreground: var(--srr-black);
+  
+  --shadow-premium: 0 4px 20px -2px rgba(0, 0, 0, 0.1), 0 2px 10px -2px rgba(0, 0, 0, 0.06);
+  --radius-booking: 8px;
 }
 
 @theme inline {
@@ -23,6 +27,9 @@
   --color-brand-sunset-start: var(--srr-sunset-start);
   --color-brand-sunset-end: var(--srr-sunset-end);
   --color-brand-gold: var(--srr-gold);
+  --color-srr-light-gray: var(--srr-light-gray);
+  --shadow-premium: var(--shadow-premium);
+  --radius-booking: var(--radius-booking);
   --font-sans: var(--font-inter), sans-serif;
 }
 

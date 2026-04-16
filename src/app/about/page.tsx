@@ -1,4 +1,4 @@
-import { CheckCircle2, Home, Building2, Map, ShieldCheck, Heart, Target, Eye, Gem } from "lucide-react";
+import { CheckCircle2, Home, Building2, Map, ShieldCheck, Heart, Target, Eye, Gem, Clock, Trophy } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -101,59 +101,73 @@ export default function AboutPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-green opacity-20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
           
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-brand-gold mb-10 text-center">Why Choose Us?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-gold mb-12 text-center">Why Choose SRR Resorts?</h2>
             
-            <div className="grid md:grid-cols-2 gap-12">
-              <div className="space-y-8">
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <ShieldCheck className="w-8 h-8 text-brand-sunset-start" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Unmatched Privacy</h3>
-                    <p className="text-white/80 leading-relaxed">
-                      By prioritizing single-event bookings for our function hall and clustered layouts for our houses, we guarantee a private, dedicated environment for you and your guests.
-                    </p>
-                  </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
+              {/* Point 1: Privacy */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-sunset-start/20 rounded-2xl flex items-center justify-center mb-2">
+                  <ShieldCheck className="w-8 h-8 text-brand-sunset-start" />
                 </div>
-                
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <Heart className="w-8 h-8 text-brand-sunset-start" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Family & Corporate Friendly</h3>
-                    <p className="text-white/80 leading-relaxed">
-                      From large dining areas for families to sophisticated setups for corporate gatherings, our versatile spaces cater smoothly to both pleasure and business.
-                    </p>
-                  </div>
+                <h3 className="text-xl font-bold text-brand-gold">Unmatched Privacy</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  We prioritize your exclusivity by booking only one major event at a time in our hall, ensuring your celebration has our undivided attention and a dedicated, private atmosphere.
+                </p>
+              </div>
+              
+              {/* Point 2: Sports */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-gold/20 rounded-2xl flex items-center justify-center mb-2">
+                  <Trophy className="w-8 h-8 text-brand-gold" />
                 </div>
+                <h3 className="text-xl font-bold text-brand-gold">Sports & Outdoor Activities</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  Stay active and engaged with our premium **Swimming Pool** and professional-grade **Box Cricket** arena, designed for sports enthusiasts of all ages.
+                </p>
               </div>
 
-              <div className="space-y-8">
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <CheckCircle2 className="w-8 h-8 text-brand-sunset-start" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Leisure & Relaxation</h3>
-                    <p className="text-white/80 leading-relaxed">
-                      Enjoy expansive outdoor swimming pools, nature trails, and comprehensive indoor games for all ages, creating an engaging atmosphere for your whole party.
-                    </p>
-                  </div>
+              {/* Point 3: Convention */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-green/30 rounded-2xl flex items-center justify-center mb-2">
+                  <Building2 className="w-8 h-8 text-white" />
                 </div>
-                
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <Map className="w-8 h-8 text-brand-sunset-start" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Nature Immersed Architecture</h3>
-                    <p className="text-white/80 leading-relaxed">
-                      Experience luxury seamlessly integrated with the environment. Enjoy evening bonfires by the water bodies, taking in the serene and peaceful surroundings.
-                    </p>
-                  </div>
+                <h3 className="text-xl font-bold text-brand-gold">Convention Excellence</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  Our professional Convention Hall boasts a **1000+ seating capacity**, versatile staging, and modern AV support, making it the premier choice for weddings and corporate galas.
+                </p>
+              </div>
+
+              {/* Point 4: Nature */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-sunset-start/20 rounded-2xl flex items-center justify-center mb-2">
+                  <Home className="w-8 h-8 text-brand-sunset-start" />
                 </div>
+                <h3 className="text-xl font-bold text-brand-gold">Nature-First Living</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  Experience architectural harmony with our Independent Houses. Cluster A features private **bonfires**, while Cluster B offers a premium **foot pool**, both set amidst serene nature.
+                </p>
+              </div>
+
+              {/* Point 5: Location */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-gold/20 rounded-2xl flex items-center justify-center mb-2">
+                  <Map className="w-8 h-8 text-brand-gold" />
+                </div>
+                <h3 className="text-xl font-bold text-brand-gold">Prime Accessibility</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  Strategically located in Choutuppal, we offer the perfect balance—accessible enough for a quick getaway from the city, yet isolated enough to provide absolute peace and quiet.
+                </p>
+              </div>
+
+              {/* Point 6: Service */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-brand-green/30 rounded-2xl flex items-center justify-center mb-2">
+                  <Clock className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-brand-gold">24/7 Premium Service</h3>
+                <p className="text-white/80 leading-relaxed text-sm">
+                  Whether you reside in our 12 Luxury Rooms across 3 floors or our Independent Houses, our dedicated hospitality team is available around the clock to ensure your stay is flawless.
+                </p>
               </div>
             </div>
           </div>
