@@ -370,7 +370,7 @@ function ServicesContent() {
                   </div>
                   <h2 className="text-3xl font-bold text-brand-dark-green mb-4">Request Received!</h2>
                   <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                    Thank you for choosing SRR Resorts. Our team will verify your details and Aadhar document, then contact you at **{formData.phone}** to finalize your reservation.
+                    Thank you for choosing SRR Resorts. Our team will verify your details{(activeModal === 'ROOM' || activeModal === 'HOUSE') ? ' and Aadhar document, ' : ', '}then contact you at **{formData.phone}** to finalize your reservation.
                   </p>
                   <button 
                     onClick={() => setActiveModal(null)}
@@ -384,7 +384,7 @@ function ServicesContent() {
                   {/* Left Column: Personal Info */}
                   <div className="space-y-6">
                     <div className="space-y-4">
-                      <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">1. Personal Details</h4>
+                      <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">Personal Details</h4>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Full Name</label>
                         <div className="relative">
@@ -431,33 +431,43 @@ function ServicesContent() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">2. Identity Verification</h4>
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center cursor-pointer hover:border-brand-sunset-start hover:bg-brand-sunset-start/5 transition-all group"
-                      >
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          className="hidden" 
-                          accept="image/*,.pdf"
-                          onChange={(e) => setFormData({...formData, aadharFile: e.target.files?.[0] || null})}
-                        />
-                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-brand-sunset-start/20">
-                          <Upload className="w-5 h-5 text-gray-400 group-hover:text-brand-sunset-start" />
+                    {(activeModal === 'ROOM' || activeModal === 'HOUSE') && (
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">Identity Verification</h4>
+                        
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3">
+                          <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                          <p className="text-sm text-amber-800 font-medium">
+                            Please bring your physical Aadhar card with you when you come to the resort for verification.
+                          </p>
                         </div>
-                        <p className="text-sm font-bold text-brand-dark-green mb-1">
-                          {formData.aadharFile ? formData.aadharFile.name : 'Upload Aadhar Card'}
-                        </p>
-                        <p className="text-xs text-gray-400">PDF, JPG or PNG (Max 5MB)</p>
+
+                        <div 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center cursor-pointer hover:border-brand-sunset-start hover:bg-brand-sunset-start/5 transition-all group"
+                        >
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*,.pdf"
+                            onChange={(e) => setFormData({...formData, aadharFile: e.target.files?.[0] || null})}
+                          />
+                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-brand-sunset-start/20">
+                            <Upload className="w-5 h-5 text-gray-400 group-hover:text-brand-sunset-start" />
+                          </div>
+                          <p className="text-sm font-bold text-brand-dark-green mb-1">
+                            {formData.aadharFile ? formData.aadharFile.name : 'Upload Aadhar Card'}
+                          </p>
+                          <p className="text-xs text-gray-400">PDF, JPG or PNG (Max 5MB)</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Right Column: Slot/Date Info */}
                   <div className="space-y-6">
-                    <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">3. Booking Details</h4>
+                    <h4 className="text-sm font-bold text-brand-gold uppercase tracking-[0.2em] mb-4">Booking Details</h4>
                     
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
