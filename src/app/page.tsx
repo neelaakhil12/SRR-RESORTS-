@@ -29,13 +29,44 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Types for dynamic data
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url: string;
+  points: string[] | any;
+  count_info: string;
+}
+
+interface GalleryImage {
+  id: string;
+  url: string;
+  title: string;
+  category: string;
+}
+
+interface HeroSettings {
+  title: string;
+  subtitle: string;
+  backgroundImage: string;
+  ctaText: string;
+}
+
+const iconMap: Record<string, any> = {
+  ROOM: Building2,
+  HOUSE: HomeIcon,
+  HALL: Calendar,
+  LEISURE: Waves
+};
+
 const SERVICES_DETAILS = [
   { 
     id: "ROOM",
     title: "Luxury Rooms", 
     count: "12 units", 
-    icon: Building2, 
-    img: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop",
     points: [
       "Premium floor options (Level A, B, C)",
       "Private pool view architectures",
@@ -50,8 +81,6 @@ const SERVICES_DETAILS = [
     id: "HOUSE",
     title: "Independent Houses", 
     count: "6 units", 
-    icon: HomeIcon, 
-    img: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop",
     points: [
       "Private individual nature cottages",
       "Full-cluster booking options (3 houses)",
@@ -66,8 +95,6 @@ const SERVICES_DETAILS = [
     id: "HALL",
     title: "Convention Hall", 
     count: "1 venue", 
-    icon: Calendar, 
-    img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop",
     points: [
       "Massive 1000+ guest capacity",
       "Strict one-event policy for privacy",
@@ -82,8 +109,6 @@ const SERVICES_DETAILS = [
     id: "LEISURE",
     title: "Sports & Leisure Activities", 
     count: "Multiple", 
-    icon: Waves, 
-    img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop",
     points: [
       "Professional-grade Box Cricket turf",
       "Temperature-controlled Swimming Pool",
@@ -103,14 +128,44 @@ const fadeUp = {
   transition: { duration: 0.6 }
 };
 
+// Fallback gallery shown until DB has images
+const FALLBACK_GALLERY = [
+  { id: "g1", title: "Luxury Rooms", category: "Rooms", url: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop" },
+  { id: "g2", title: "Grand Convention Hall", category: "Events", url: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop" },
+  { id: "g3", title: "Swimming Pool", category: "Leisure", url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop" }
+];
+
+// Fallback services shown until DB has data
+const FALLBACK_SERVICES: Service[] = [
+  { id: "s1", name: "Luxury Rooms", description: "Premium stay experience", price: 2500, category: "ROOM", image_url: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop", count_info: "12 units", points: SERVICES_DETAILS[0].points },
+  { id: "s2", name: "Independent Houses", description: "Private nature retreats", price: 3000, category: "HOUSE", image_url: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop", count_info: "6 units", points: SERVICES_DETAILS[1].points },
+  { id: "s3", name: "Convention Hall", description: "Premium event venue", price: 0, category: "HALL", image_url: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop", count_info: "1 venue", points: SERVICES_DETAILS[2].points },
+  { id: "s4", name: "Sports & Leisure Activities", description: "Recreation & fun", price: 350, category: "LEISURE", image_url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop", count_info: "Multiple", points: SERVICES_DETAILS[3].points },
+];
+
 export default function Home() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
   
+  // Dynamic Data State
+  const [services, setServices] = useState<Service[]>([]);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [hero, setHero] = useState<HeroSettings>({
+    title: "Welcome to SRR",
+    subtitle: "Where Comfort Meets Luxury",
+    backgroundImage: "/hero.png",
+    ctaText: "Book Now"
+  });
+  const [offerings, setOfferings] = useState({
+    badge: "Our Offerings",
+    titlePart1: "Browse by",
+    titlePart2: "service type"
+  });
+
   // Booking State
   const [serviceType, setServiceType] = useState("Select Service");
   const [activePopover, setActivePopover] = useState<string | null>(null);
-  const [selectedQuickView, setSelectedQuickView] = useState<typeof SERVICES_DETAILS[0] | null>(null);
+  const [selectedQuickView, setSelectedQuickView] = useState<Service | null>(null);
   const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState("");
   const [checkInTime, setCheckInTime] = useState({ hour: "10", minute: "00", period: "AM" });
@@ -120,7 +175,46 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch Services — fall back to static data if DB is empty
+      const sRes = await fetch("/api/admin/services");
+      const sData = await sRes.json();
+      if (Array.isArray(sData) && sData.length > 0) {
+        setServices(sData);
+      } else {
+        setServices(FALLBACK_SERVICES);
+      }
+
+      // Fetch Gallery — fall back to curated photos if DB is empty
+      const gRes = await fetch("/api/admin/gallery");
+      const gData = await gRes.json();
+      if (Array.isArray(gData) && gData.length > 0) {
+        setGallery(gData.slice(0, 3));
+      } else {
+        setGallery(FALLBACK_GALLERY);
+      }
+
+      // Fetch Hero
+      const hRes = await fetch("/api/admin/settings?key=hero");
+      const hData = await hRes.json();
+      if (hData?.value) setHero(hData.value);
+
+      // Fetch Offerings Settings
+      const oRes = await fetch("/api/admin/settings?key=offerings");
+      const oData = await oRes.json();
+      if (oData?.value) setOfferings(oData.value);
+
+    } catch (err) {
+      console.error("Failed to fetch dynamic content", err);
+      // On total failure, show fallback content
+      setServices(FALLBACK_SERVICES);
+      setGallery(FALLBACK_GALLERY);
+    }
+  };
   
   const handleSearch = () => {
     if (serviceType === "Select Service") {
@@ -141,7 +235,10 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section - Booking.com Style Header Integrated */}
-      <section className={`relative w-full h-[56.25vw] min-h-[220px] md:h-auto md:min-h-[900px] flex items-center justify-center bg-[url('/hero.png')] bg-cover bg-center md:bg-[50%_20%] text-white overflow-visible ${isExpanded ? 'mb-44' : 'mb-2'} md:mb-16 transition-all duration-500`}>
+      <section 
+        className={`relative w-full h-[56.25vw] min-h-[220px] md:h-auto md:min-h-[900px] flex items-center justify-center bg-cover bg-center md:bg-[50%_20%] text-white overflow-visible ${isExpanded ? 'mb-44' : 'mb-2'} md:mb-16 transition-all duration-500`}
+        style={{ backgroundImage: `url('${hero.backgroundImage || "/hero.png"}')` }}
+      >
         <div className="absolute inset-0 bg-black/40" />
         <div className="z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center pt-2 md:pt-0">
           <div className="flex flex-col items-center mb-10 md:mb-16">
@@ -150,7 +247,7 @@ export default function Home() {
               initial="hidden"
               animate="visible"
             >
-              {mounted ? "Welcome to SRR".split("").map((char, index) => (
+              {mounted ? (hero.title || "").split("").map((char, index) => (
                 <motion.span
                   key={index}
                   variants={{
@@ -161,7 +258,7 @@ export default function Home() {
                 >
                   {char}
                 </motion.span>
-              )) : "Welcome to SRR"}
+              )) : (hero.title || "")}
             </motion.div>
 
             <motion.div 
@@ -169,7 +266,7 @@ export default function Home() {
               initial="hidden"
               animate="visible"
             >
-              {mounted ? "Where Comfort Meets Luxury".split("").map((char, index) => (
+              {mounted ? (hero.subtitle || "").split("").map((char, index) => (
                 <motion.span
                   key={index}
                   variants={{
@@ -180,7 +277,7 @@ export default function Home() {
                 >
                   {char}
                 </motion.span>
-              )) : "Where Comfort Meets Luxury"}
+              )) : (hero.subtitle || "")}
             </motion.div>
           </div>
           
@@ -228,33 +325,31 @@ export default function Home() {
                           onClick={(e) => e.stopPropagation()}
                           className="absolute top-full left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 overflow-hidden"
                         >
-                          {[
-                            { name: 'Luxury Rooms', icon: Building2, desc: '12 premium rooms across 3 floors' },
-                            { name: 'Independent Houses', icon: HomeIcon, desc: 'Private stays with bonfire & water body' },
-                            { name: 'Convention Hall', icon: Calendar, desc: '1000+ capacity for grand events' },
-                            { name: 'Sports & Leisure Activities', icon: Waves, desc: 'Pool & Box Cricket for day visitors' }
-                          ].map((item) => (
-                            <div
-                              key={item.name}
-                              onClick={() => {
-                                setServiceType(item.name);
-                                setActivePopover(null);
-                              }}
-                              className={`flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer hover:bg-gray-50 group/item ${serviceType === item.name ? 'bg-brand-dark-green/5' : ''}`}
-                            >
-                              <div className={`p-2 rounded-lg ${serviceType === item.name ? 'bg-brand-dark-green text-white' : 'bg-gray-100 text-gray-400 group-hover/item:bg-brand-gold/20 group-hover/item:text-brand-gold'}`}>
-                                <item.icon className="w-4 h-4" />
+                          {services.map((item) => {
+                            const IconComp = iconMap[item.category] || Plus;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => {
+                                  setServiceType(item.name);
+                                  setActivePopover(null);
+                                }}
+                                className={`flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer hover:bg-gray-50 group/item ${serviceType === item.name ? 'bg-brand-dark-green/5' : ''}`}
+                              >
+                                <div className={`p-2 rounded-lg ${serviceType === item.name ? 'bg-brand-dark-green text-white' : 'bg-gray-100 text-gray-400 group-hover/item:bg-brand-gold/20 group-hover/item:text-brand-gold'}`}>
+                                  <IconComp className="w-4 h-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className={`text-sm font-bold ${serviceType === item.name ? 'text-brand-dark-green' : 'text-gray-700'}`}>
+                                    {item.name}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 leading-tight">
+                                    {item.count_info}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className={`text-sm font-bold ${serviceType === item.name ? 'text-brand-dark-green' : 'text-gray-700'}`}>
-                                  {item.name}
-                                </span>
-                                <span className="text-[10px] text-gray-400 leading-tight">
-                                  {item.desc}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -472,7 +567,7 @@ export default function Home() {
                         className="bg-brand-dark-green hover:bg-black text-white px-8 py-2.5 md:py-0 rounded-lg font-bold transition-all flex items-center justify-center gap-2 active:scale-95 m-1"
                       >
                         <Search className="w-5 h-5" />
-                        <span className="md:inline">Search</span>
+                        <span className="md:inline">{hero.ctaText}</span>
                       </button>
                     </motion.div>
                   )}
@@ -484,14 +579,28 @@ export default function Home() {
       </section>
 
       {/* Browse by Service Type - The Property Grid */}
-      <section className="py-16 px-4 md:py-24 bg-white">
+      <section className="py-16 px-4 md:py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-brand-dark-green mb-8">Browse by service type</h2>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 md:mb-16"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-6">
+              <span className="w-2 h-2 rounded-full bg-brand-gold shadow-[0_0_10px_rgba(196,155,90,0.8)] animate-pulse" />
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-brand-gold">{offerings.badge}</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-brand-dark-green leading-[1.1] tracking-tight">
+              {offerings.titlePart1} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold via-brand-sunset-start to-brand-sunset-end">{offerings.titlePart2}</span>
+            </h2>
+          </motion.div>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {SERVICES_DETAILS.map((s, idx) => (
+            {services.map((s, idx) => (
               <motion.div 
-                key={idx}
+                key={s.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -499,7 +608,7 @@ export default function Home() {
                 className="group relative flex flex-col"
               >
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-3 border border-gray-100 shadow-sm transition-transform duration-500 group-hover:shadow-md">
-                  <img src={s.img} alt={s.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={s.image_url} alt={s.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-black/5 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <button 
                       onClick={() => setSelectedQuickView(s)}
@@ -511,8 +620,8 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-brand-dark-green text-sm md:text-base group-hover:text-brand-sunset-start transition-colors">{s.title}</h3>
-                    <p className="text-xs text-gray-500">{s.count}</p>
+                    <h3 className="font-bold text-brand-dark-green text-sm md:text-base group-hover:text-brand-sunset-start transition-colors">{s.name}</h3>
+                    <p className="text-xs text-gray-500">{s.count_info}</p>
                   </div>
                 </div>
               </motion.div>
@@ -582,20 +691,11 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { title: "Luxury Rooms", category: "Rooms", img: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop" },
-              { title: "Grand Convention Hall", category: "Events", img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop" },
-              { title: "Swimming Pool", category: "Leisure", img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop" }
-            ].map((item, idx) => (
-              <div key={idx} className="group relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 cursor-pointer h-64 md:h-80">
-                <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark-green/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-                  <span className="text-brand-gold text-xs font-bold uppercase tracking-widest mb-1">{item.category}</span>
+            {gallery.map((item, idx) => (
+              <div key={item.id} className="group relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 cursor-pointer h-64 md:h-80">
+                <img src={item.url} alt={item.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-dark-green/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                   <h3 className="text-white text-xl font-bold">{item.title}</h3>
-                </div>
-                {/* Tag Always visible until hover */}
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-brand-dark-green uppercase tracking-tighter shadow-sm group-hover:hidden transition-all">
-                  {item.category}
                 </div>
               </div>
             ))}
@@ -662,6 +762,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       {/* Quick View Modal */}
       <AnimatePresence>
         {selectedQuickView && (
@@ -677,65 +778,74 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-[92%] max-w-lg max-h-[85vh] md:max-h-none rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
+              className="relative bg-white w-[92%] max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
             >
               <button 
                 onClick={() => setSelectedQuickView(null)}
-                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-brand-dark-green transition-all z-10"
+                className="absolute top-6 right-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-brand-dark-green transition-all z-10"
               >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
+                <X className="w-5 h-5" />
               </button>
 
-              <div className="h-32 md:h-48 relative shrink-0">
-                <img src={selectedQuickView.img} className="w-full h-full object-cover" alt={selectedQuickView.title} />
+              <div className="h-48 relative shrink-0">
+                <img src={selectedQuickView.image_url} className="w-full h-full object-cover" alt={selectedQuickView.name} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-4 left-6 md:bottom-6 md:left-8">
-                  <h3 className="text-xl md:text-3xl font-bold text-white">{selectedQuickView.title}</h3>
-                  <p className="text-brand-gold font-bold text-xs md:text-sm tracking-widest uppercase">{selectedQuickView.count}</p>
+                <div className="absolute bottom-6 left-8">
+                  <h3 className="text-2xl md:text-3xl font-bold text-white">{selectedQuickView.name}</h3>
+                  <p className="text-brand-gold font-bold text-xs md:text-sm tracking-widest uppercase">{selectedQuickView.count_info}</p>
                 </div>
               </div>
 
-              <div className="p-6 md:p-10 overflow-y-auto no-scrollbar">
-                <h4 className="text-brand-dark-green font-bold text-base md:text-lg mb-4 md:mb-6 flex items-center gap-2">
-                  <Info className="w-4 h-4 md:w-5 md:h-5 text-brand-gold" /> Service Highlights
-                </h4>
-                <div className="grid grid-cols-1 gap-2.5 md:gap-4 mb-6 md:mb-10">
-                  {selectedQuickView.points.map((point, i) => (
-                    <motion.div 
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 + 0.3 }}
-                      className="flex items-center gap-3"
-                    >
-                      <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-brand-gold shrink-0" />
-                      <span className="text-gray-600 font-medium text-sm md:text-base">{point}</span>
-                    </motion.div>
-                  ))}
+              <div className="p-8 md:p-10 overflow-y-auto no-scrollbar space-y-8">
+                <div>
+                  <h4 className="text-brand-dark-green font-bold text-base md:text-lg mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-brand-gold" /> Service Highlights
+                  </h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    {Array.isArray(selectedQuickView.points) && selectedQuickView.points.length > 0 ? (
+                      selectedQuickView.points.map((point: string, i: number) => (
+                        <motion.div 
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="flex items-start gap-3"
+                        >
+                          <CheckCircle2 className="w-5 h-5 text-brand-gold shrink-0 mt-0.5" />
+                          <span className="text-gray-600 font-medium text-sm md:text-base leading-relaxed">{point}</span>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <p className="text-sm text-gray-400 font-medium italic">Highlights currently being updated by management.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setServiceType(selectedQuickView.title);
-                    setSelectedQuickView(null);
-                    // Standard search logic will execute on navigate
-                    const params = new URLSearchParams({
-                      type: selectedQuickView.title.toLowerCase().replace(/\s+/g, '-').replace('&', '-and-'),
-                      checkIn: checkIn || today,
-                      checkOut: checkOut || "",
-                      checkInTime: `${checkInTime.hour}:${checkInTime.minute} ${checkInTime.period}`,
-                      checkOutTime: `${checkOutTime.hour}:${checkOutTime.minute} ${checkOutTime.period}`
-                    });
-                    router.push(`/services?${params.toString()}`);
-                  }}
-                  className="w-full bg-sunset-gradient text-white py-3 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-xl shadow-brand-sunset-start/20 hover:opacity-90 transition-all flex items-center justify-center gap-2"
-                >
-                  Book This Service <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      setServiceType(selectedQuickView.name);
+                      setSelectedQuickView(null);
+                      const params = new URLSearchParams({
+                        type: selectedQuickView.name.toLowerCase().replace(/\s+/g, '-').replace('&', '-and-'),
+                        checkIn: checkIn || today,
+                        checkOut: checkOut || "",
+                        checkInTime: `${checkInTime.hour}:${checkInTime.minute} ${checkInTime.period}`,
+                        checkOutTime: `${checkOutTime.hour}:${checkOutTime.minute} ${checkOutTime.period}`
+                      });
+                      router.push(`/services?${params.toString()}`);
+                    }}
+                    className="w-full bg-sunset-gradient text-white py-4 md:py-5 rounded-[1.5rem] font-bold text-base md:text-xl shadow-xl shadow-brand-sunset-start/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                  >
+                    Book This Service <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
 
-                <p className="text-center text-xs text-gray-400 mt-6 flex items-center justify-center gap-1">
-                   <ShieldCheck className="w-3 h-3 text-brand-gold" /> Exclusive SRR Hospitality Standard
-                </p>
+                  <p className="text-center text-[10px] text-gray-400 mt-6 flex items-center justify-center gap-1 uppercase tracking-widest font-black">
+                     <ShieldCheck className="w-4 h-4 text-brand-gold" /> Exclusive SRR Hospitality Standard
+                  </p>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -744,4 +854,3 @@ export default function Home() {
     </div>
   );
 }
-

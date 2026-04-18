@@ -96,8 +96,13 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="border-t border-white/5 mt-16 pt-8 text-center text-xs text-gray-500">
+        <div className="border-t border-white/5 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
           <p>&copy; {new Date().getFullYear()} SRR Resort and Convention. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link href="/terms" className="hover:text-brand-gold transition-colors">Terms & Conditions</Link>
+            <Link href="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link>
+            <Link href="/refund-policy" className="hover:text-brand-gold transition-colors">Refund Policy</Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,142 +1,202 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Mail, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
-export default function LoginPage() {
+export default function UserLoginPage() {
+  const { sendOtp, verifyOtp, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<1 | 2>(1); // 1: Email, 2: OTP
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
   const router = useRouter();
-  const supabase = createClient();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
+    setError(null);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setMessage({ type: "error", text: error.message });
-    } else {
-      setMessage({ type: "success", text: "Check your email for the login link!" });
+    try {
+      const res = await sendOtp(email);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        setStep(2); // Move to OTP step
+      }
+    } catch (err: any) {
+      setError("Failed to send OTP. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await verifyOtp(email, otp);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        // Successful login!
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err: any) {
+      setError("Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    setError(null);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError("Failed to initialize Google login.");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-srr-cream py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-sm border border-black/5">
+    <div className="min-h-screen flex items-center justify-center bg-[#fdfcf9] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-gray-100">
         <div className="text-center">
           <Link href="/" className="inline-block mb-6">
-            <h2 className="text-3xl font-bold tracking-tighter text-brand-dark-green">
-              SRR <span className="text-brand-sunset-start">Resorts</span>
+            <h2 className="text-3xl font-black tracking-tighter text-[#0b1a10]">
+              SRR <span className="text-brand-gold">Resorts</span>
             </h2>
           </Link>
-          <h2 className="text-center text-2xl font-bold text-gray-900">Sign in to your account</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Secure login to manage your luxury bookings.
+          <h2 className="text-center text-3xl font-black text-[#0b1a10]">
+              {step === 1 ? "Welcome Back" : "Verify OTP"}
+          </h2>
+          <p className="mt-3 text-center text-sm text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+            {step === 1 
+              ? "Sign in to manage your bookings and services." 
+              : `Enter the 6-digit code sent to ${email}`
+            }
           </p>
         </div>
 
-        {message && (
-          <div className={`p-4 rounded-xl text-sm ${message.type === "success" ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
-            {message.text}
+        {error && (
+          <div className="p-4 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-red-50 text-red-500 border border-red-100 animate-in fade-in slide-in-from-top-1 duration-300">
+            {error}
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="email-address" className="sr-only">Email address</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
+        {step === 1 ? (
+          <form className="mt-10 space-y-4" onSubmit={handleSendOtp}>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Email Address</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-gold transition-colors">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  className="appearance-none relative block w-full pl-14 pr-5 py-5 border border-gray-100 placeholder-gray-300 text-[#0b1a10] rounded-[1.25rem] focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent transition-all font-bold bg-gray-50/50"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none relative block w-full pl-12 pr-4 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-sunset-start focus:border-transparent sm:text-sm transition-shadow"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-sunset-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-sunset-start disabled:opacity-70 transition-all overflow-hidden"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <span className="flex items-center gap-2">
-                  Send Magic Link <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
-              )}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-5 px-4 border border-transparent text-sm font-black rounded-[1.25rem] text-white bg-[#0b1a10] hover:bg-[#152e1d] focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:opacity-70 transition-all shadow-2xl shadow-black/10"
+              >
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-brand-gold" />
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Send 6-Digit OTP <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
+          </form>
+        ) : (
+          <form className="mt-10 space-y-4 animate-in fade-in zoom-in-95" onSubmit={handleVerifyOtp}>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Verification Code</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-gold transition-colors">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  className="appearance-none relative block w-full pl-14 pr-5 py-5 text-center tracking-[0.5em] text-2xl border border-gray-100 placeholder-gray-300 text-[#0b1a10] rounded-[1.25rem] focus:outline-none focus:ring-2 focus:ring-brand-gold transition-all font-black bg-gray-50/50"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6">
-            <button
+            <div className="pt-2 flex flex-col gap-3">
+              <button
+                type="submit"
+                disabled={loading || otp.length < 6}
+                className="group relative w-full flex justify-center py-5 px-4 border border-transparent text-sm font-black rounded-[1.25rem] text-white bg-brand-gold hover:bg-[#c29b47] focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:opacity-70 transition-all shadow-2xl shadow-brand-gold/20"
+              >
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-white" />
+                ) : (
+                  <span className="flex items-center gap-2 text-[#0b1a10]">
+                    Verify & Sign In <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStep(1); setOtp(""); }}
+                className="text-xs font-bold text-gray-400 hover:text-[#0b1a10] transition-colors"
+              >
+                Use a different email
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 1 && (
+          <>
+            <div className="relative py-4 flex items-center justify-center">
+              <div className="absolute left-0 right-0 h-[1px] bg-gray-100"></div>
+              <span className="relative px-4 bg-white text-[10px] font-black uppercase tracking-widest text-gray-400">OR</span>
+            </div>
+
+            <button 
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full py-4 px-6 border-2 border-gray-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
+              <svg className="w-6 h-6" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
               </svg>
-              Google
+              Continue with Google
             </button>
-          </div>
+          </>
+        )}
+
+        <div className="mt-12 text-center">
+          <Link href="/" className="text-gray-400 text-sm hover:text-[#0b1a10] transition-colors">
+            Back to Home
+          </Link>
         </div>
       </div>
     </div>

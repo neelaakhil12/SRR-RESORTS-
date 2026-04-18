@@ -1,65 +1,166 @@
-import { Calendar, Users, Home, Settings, Lock } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { 
+  Calendar, 
+  Users, 
+  Home, 
+  Settings, 
+  Lock, 
+  TrendingUp, 
+  CreditCard, 
+  Clock,
+  ArrowUpRight,
+  Plus
+} from "lucide-react";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { StatCard } from "@/components/admin/StatCard";
 
 export default function AdminPanel() {
+  const [stats, setStats] = useState({
+    dailyBookings: 0,
+    dailyRevenue: 0,
+    pendingPayments: 0,
+    totalBookings: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/admin/stats");
+      const data = await res.json();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50/50">
       {/* Sidebar */}
-      <aside className="w-64 bg-brand-dark-green text-white flex flex-col">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold tracking-tighter">
-            SRR <span className="text-brand-sunset-start">Admin</span>
-          </h2>
-        </div>
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          <a href="#" className="flex items-center gap-3 bg-white/10 px-4 py-3 rounded-xl font-medium">
-            <Home className="w-5 h-5" /> Overview
-          </a>
-          <a href="#" className="flex items-center gap-3 hover:bg-white/5 px-4 py-3 rounded-xl font-medium transition-colors">
-            <Calendar className="w-5 h-5" /> All Bookings
-          </a>
-          <a href="#" className="flex items-center gap-3 hover:bg-white/5 px-4 py-3 rounded-xl font-medium transition-colors">
-             <Lock className="w-5 h-5" /> Manage Room Blocks
-          </a>
-          <a href="#" className="flex items-center gap-3 hover:bg-white/5 px-4 py-3 rounded-xl font-medium transition-colors">
-            <Users className="w-5 h-5" /> Customers
-          </a>
-        </nav>
-      </aside>
+      <AdminSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Overview</h1>
+      <main className="flex-1 p-10 overflow-y-auto">
+        <header className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-4xl font-black text-[#0b1a10]">Dashboard Overview</h1>
+            <p className="text-gray-400 font-medium mt-2">Welcome back. Here's what's happening today at SRR Resorts.</p>
+          </div>
+          <div className="flex items-center gap-4">
+             <button className="bg-[#0b1a10] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10">
+               <Plus className="w-5 h-5 text-brand-gold" /> Manual Booking
+             </button>
+          </div>
+        </header>
         
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-brand-green">
-            <p className="text-sm text-gray-500 font-medium">Pending Bookings</p>
-            <p className="text-3xl font-bold text-gray-800 mt-2">12</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-brand-sunset-start">
-            <p className="text-sm text-gray-500 font-medium">Rooms Available Today</p>
-            <p className="text-3xl font-bold text-gray-800 mt-2">5 <span className="text-sm font-normal text-gray-400">/ 12</span></p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-brand-gold">
-            <p className="text-sm text-gray-500 font-medium">Hall Booked Today</p>
-            <p className="text-3xl font-bold text-gray-800 mt-2">Yes</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard 
+            label="Daily Revenue" 
+            value={`₹${stats.dailyRevenue}`} 
+            icon={TrendingUp} 
+            color="green" 
+            trend="+12%" 
+            trendType="up"
+          />
+          <StatCard 
+            label="Today's Bookings" 
+            value={stats.dailyBookings} 
+            icon={Calendar} 
+            color="sunset"
+          />
+          <StatCard 
+            label="Pending Payments" 
+            value={stats.pendingPayments} 
+            icon={Clock} 
+            color="gold"
+          />
+          <StatCard 
+            label="Total Bookings" 
+            value={stats.totalBookings} 
+            icon={Users}
+          />
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Quick Actions</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-             <button className="flex flex-col items-start p-6 bg-srr-cream rounded-xl hover:bg-orange-50 transition-colors border border-gray-100">
-               <Calendar className="w-6 h-6 text-brand-sunset-start mb-2" />
-               <h3 className="font-bold text-gray-800">Add Manual Booking</h3>
-               <p className="text-sm text-gray-500 mt-1 text-left">Instantly block a room for a walk-in customer.</p>
-             </button>
-             <button className="flex flex-col items-start p-6 bg-srr-cream rounded-xl hover:bg-green-50 transition-colors border border-gray-100">
-               <Lock className="w-6 h-6 text-brand-green mb-2" />
-               <h3 className="font-bold text-gray-800">Block Function Hall</h3>
-               <p className="text-sm text-gray-500 mt-1 text-left">Reserve the hall for maintenance or an offline event.</p>
-             </button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Recent Activity Mockup */}
+          <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-[#0b1a10]">Recent Bookings</h2>
+              <button className="text-brand-sunset-start font-bold text-sm hover:underline">View All</button>
+            </div>
+            
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-3xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold">
+                      B
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0b1a10]">Guest Name {i}</p>
+                      <p className="text-sm text-gray-400">Luxury Room • 2 Nights</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-[#0b1a10]">₹14,000</p>
+                    <p className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Confirmed</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8">
+            <h2 className="text-2xl font-bold text-[#0b1a10] mb-8">Quick Actions</h2>
+            <div className="space-y-4">
+              <button className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-gold/10 transition-all group border border-gray-50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white rounded-2xl shadow-sm text-brand-sunset-start">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-[#0b1a10]">Manual Booking</p>
+                    <p className="text-[10px] text-gray-400">Add walk-in guests</p>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-300 group-hover:text-brand-sunset-start transition-colors" />
+              </button>
+
+              <button className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-green/10 transition-all group border border-gray-50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white rounded-2xl shadow-sm text-brand-green">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-[#0b1a10]">Block Hall</p>
+                    <p className="text-[10px] text-gray-400">Offline reservations</p>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-300 group-hover:text-brand-green transition-colors" />
+              </button>
+
+              <button className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-gold/10 transition-all group border border-gray-50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white rounded-2xl shadow-sm text-brand-gold">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-[#0b1a10]">New Service</p>
+                    <p className="text-[10px] text-gray-400">Expand offerings</p>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-300 group-hover:text-brand-gold transition-colors" />
+              </button>
+            </div>
           </div>
         </div>
       </main>

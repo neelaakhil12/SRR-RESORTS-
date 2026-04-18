@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, Bed, Building2, PartyPopper, Waves } from "lucide-react";
+import { Menu, X, ArrowRight, Bed, Building2, PartyPopper, Waves, Phone, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const { user, loading } = useAuth();
 
   // Scroll detection for mobile bottom nav
   useEffect(() => {
@@ -80,31 +82,38 @@ export function Navbar() {
           {/* Desktop Links (Main) */}
           <div className="hidden lg:flex items-center gap-6">
             <Link 
-              href="/login" 
-              className="text-sm font-bold text-white hover:text-brand-gold transition-colors"
+              href={user ? "/dashboard" : "/login"} 
+              className="text-sm font-bold text-white hover:text-brand-gold transition-colors flex items-center gap-2"
             >
-              Log in / Register
+              {user ? (
+                <>
+                  <User className="w-4 h-4 text-brand-gold" />
+                  My Account
+                </>
+              ) : (
+                "Log in / Register"
+              )}
             </Link>
             <Link
-              href="/services"
-              className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-bold text-white transition-all"
+              href="/contact"
+              className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-bold text-white transition-all flex items-center gap-2"
             >
-              List your inquiry
+              <Phone className="w-4 h-4 text-brand-gold" /> List your inquiry
             </Link>
           </div>
 
-          {/* Mobile Login Button (Re-added per request) */}
+          {/* Mobile Login Button */}
           <div className="lg:hidden">
             <Link 
-              href="/login" 
+              href="/admin-login" 
               className="text-xs font-bold text-white bg-white/10 border border-white/20 px-4 py-2 rounded-lg active:scale-95 transition-all"
             >
-              Login
+              Owner Login
             </Link>
           </div>
         </div>
 
-        {/* Categories Bar (Desktop only, similar to Booking.com sub-nav) */}
+        {/* Categories Bar (Desktop only) */}
         {!isOpen && (
           <nav className="hidden lg:flex justify-end gap-2 pb-4">
             {navLinks.map((link) => (
@@ -155,10 +164,10 @@ export function Navbar() {
 
             <div className="mt-10 space-y-4">
               <Link
-                href="/login"
+                href={user ? "/dashboard" : "/login"}
                 className="block text-center w-full bg-white text-brand-dark-green py-3 rounded-lg font-bold"
               >
-                Sign in
+                {user ? "My Account" : "Sign in"}
               </Link>
             </div>
           </motion.div>
@@ -177,7 +186,6 @@ export function Navbar() {
           className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden"
         >
           <div className="bg-brand-dark-green border-t border-white/10 flex items-stretch justify-between overflow-hidden">
-            {/* Horizontal Scrollable Container */}
             <div className="flex-1 overflow-x-auto no-scrollbar flex items-center px-2">
               <div className="flex items-center gap-0 whitespace-nowrap">
                 {[
@@ -198,7 +206,6 @@ export function Navbar() {
                 ))}
               </div>
             </div>
-            
           </div>
         </motion.div>
       )}

@@ -13,9 +13,6 @@ export const metadata: Metadata = {
 };
 
 import { RootWrapper } from "@/components/layout/RootWrapper";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 
 export default function RootLayout({
   children,
@@ -29,12 +26,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <RootWrapper>
-          <Navbar />
-          <main className="flex-1 flex flex-col">
-            {children}
-          </main>
-          <Footer />
-          <WhatsAppButton />
+          {children}
         </RootWrapper>
       </body>
     </html>

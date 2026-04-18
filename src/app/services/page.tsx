@@ -34,12 +34,20 @@ const HOUSE_CLUSTERS = [
   { name: "Cluster B (Houses 4-6) - Foot Pool", houses: ["House 4", "House 5", "House 6"] }
 ];
 
-const SERVICES = [
+const FALLBACK_SERVICES = [
   {
     id: "ROOM",
     name: "Luxury Rooms",
     description: "Experience absolute comfort in our 12 premium luxury rooms. Choose your preferred floor and room to secure your perfect stay.",
-    features: ["Room-wise selection (A1-C4)", "Premium amenities", "Swimming pool access", "Box cricket access"],
+    features: [
+      "Premium floor options (Level A, B, C)",
+      "Private pool view architectures",
+      "Dedicated room service & cleanup",
+      "Complimentary organic breakfast",
+      "Modern climate control systems",
+      "Smart TV & High-speed fiber WiFi",
+      "Priority access to Box Cricket"
+    ],
     image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1000&auto=format&fit=crop",
     price: 2500,
     priceUnit: "Room"
@@ -48,7 +56,15 @@ const SERVICES = [
     id: "HOUSE",
     name: "Independent Houses",
     description: "Book one of our 6 exclusive independent houses. Set in nature, Cluster A (Houses 1-3) features a private bonfire, and Cluster B (Houses 4-6) features a premium foot pool.",
-    features: ["Private accommodations", "Bonfire (Cluster A)", "Foot Pool (Cluster B)", "Swimming pool access", "Box cricket access"],
+    features: [
+      "Private individual nature cottages",
+      "Full-cluster booking options (3 houses)",
+      "Private Bonfire pits (Cluster A)",
+      "Premium Foot Pool experience (Cluster B)",
+      "Nature-immersed living spaces",
+      "Spacious 2-bedroom configurations",
+      "Personal assistance on-call"
+    ],
     image: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop",
     price: 3000,
     priceUnit: "House"
@@ -57,16 +73,32 @@ const SERVICES = [
     id: "HALL",
     name: "Convention Hall",
     description: "Host your weddings, corporate events, and parties in our exclusive function hall. We guarantee complete privacy by booking only one event at a time.",
-    features: ["1000 seating capacity", "Garden", "Timings: 12 hours"],
+    features: [
+      "Massive 1000+ guest capacity",
+      "Strict one-event policy for privacy",
+      "Lush garden for outdoor cocktails",
+      "State-of-the-art Sound & LED logic",
+      "Integrated catering & kitchen zone",
+      "Luxurious air-conditioned bridal suite",
+      "High-security parking lot"
+    ],
     image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1000&auto=format&fit=crop",
-    price: null,
+    price: 0,
     priceUnit: "Event"
   },
   {
     id: "LEISURE",
     name: "Sports & Leisure Activities",
     description: "Perfect for day visitors! Enjoy our professional-grade sports facilities and swimming pool. Available for individual and group bookings.",
-    features: ["Swimming Pool", "Box Cricket"],
+    features: [
+      "Professional-grade Box Cricket turf",
+      "Temperature-controlled Swimming Pool",
+      "All sports gear included on request",
+      "Certified lifeguards on-site",
+      "Deluxe changing & locker rooms",
+      "Daily & hourly slots available",
+      "Poolside refreshments bar access"
+    ],
     image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1000&auto=format&fit=crop",
     price: 350,
     priceUnit: "Hour"
@@ -101,6 +133,33 @@ function ServicesContent() {
     items: [] as string[],
     aadharFile: null as File | null
   });
+
+  const [services, setServices] = useState(FALLBACK_SERVICES);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await fetch("/api/admin/services");
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          // Format DB data to match component expectations
+          const formatted = data.map((s: any) => ({
+            id: s.category, // Use category as ID for booking logic compatibility
+            name: s.name,
+            description: s.description,
+            features: Array.isArray(s.points) && s.points.length > 0 ? s.points : [],
+            image: s.image_url,
+            price: s.price,
+            priceUnit: s.count_info?.split(" ")[1] || "Unit"
+          }));
+          setServices(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch services, using fallbacks", err);
+      }
+    };
+    fetchServices();
+  }, []);
 
   const calculateTotal = () => {
     if (activeModal === 'ROOM') return formData.items.length * 2500;
@@ -200,7 +259,7 @@ function ServicesContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const serviceName = SERVICES.find(s => s.id === activeModal)?.name || "Service";
+    const serviceName = services.find(s => s.id === activeModal)?.name || "Service";
     const itemsList = formData.items.length > 0 ? formData.items.join(", ") : "None selected";
     const totalPrice = calculateTotal();
     
@@ -240,7 +299,7 @@ function ServicesContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-          {SERVICES.map((service) => (
+          {services.map((service) => (
             <div key={service.id} className="bg-white rounded-3xl shadow-sm border border-black/5 overflow-hidden flex flex-col hover:shadow-lg transition-all group">
               <div className="relative h-56 md:h-64 w-full bg-gray-200 overflow-hidden">
                 <img 
@@ -292,7 +351,7 @@ function ServicesContent() {
                   {activeModal === 'LEISURE' && <Info className="w-5 h-5 text-brand-sunset-start" />}
                 </div>
                 <h3 className="text-xl font-bold text-brand-dark-green">
-                  {isSuccess ? 'Booking Confirmed' : `Book ${SERVICES.find(s => s.id === activeModal)?.name}`}
+                  {isSuccess ? 'Booking Confirmed' : `Book ${services.find(s => s.id === activeModal)?.name}`}
                 </h3>
               </div>
               <button 
@@ -480,17 +539,22 @@ function ServicesContent() {
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-brand-dark-green/60 uppercase ml-1">Select Activities</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {['Swimming Pool', 'Box Cricket'].map(act => (
-                                <button
-                                  key={act}
-                                  type="button"
-                                  onClick={() => toggleItem(act)}
-                                  className={`py-3 text-xs font-bold rounded-lg transition-all border ${formData.items.includes(act) ? 'bg-brand-dark-green text-white border-brand-dark-green' : 'bg-white text-brand-dark-green border-gray-100'}`}
-                                >
-                                  {act}
-                                </button>
-                              ))}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {(() => {
+                                const leisureService = services.find(s => s.id === 'LEISURE');
+                                const activities = leisureService?.features || ['Swimming Pool', 'Box Cricket'];
+                                return activities.map(act => (
+                                  <button
+                                    key={act}
+                                    type="button"
+                                    onClick={() => toggleItem(act)}
+                                    className={`py-3 px-4 text-xs font-bold rounded-xl transition-all border text-left flex items-center justify-between ${formData.items.includes(act) ? 'bg-brand-dark-green text-white border-brand-dark-green shadow-md' : 'bg-white text-brand-dark-green border-gray-100 hover:border-brand-gold'}`}
+                                  >
+                                    <span className="truncate">{act}</span>
+                                    {formData.items.includes(act) && <CheckCircle2 className="w-3 h-3 text-brand-gold" />}
+                                  </button>
+                                ));
+                              })()}
                             </div>
                           </div>
                           <div className="space-y-2">
