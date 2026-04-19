@@ -1,4 +1,10 @@
+import { Metadata } from "next";
 import { CheckCircle2, Home, Building2, Map, ShieldCheck, Heart, Target, Eye, Gem, Clock, Trophy } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description: "Learn about the grand vision of SRR Resorts & Convention. We provide serenity, luxury, and unmatched privacy for stays and celebrations in Choutuppal.",
+};
 
 export default function AboutPage() {
   return (

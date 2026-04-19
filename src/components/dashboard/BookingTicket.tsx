@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import QRCode from "react-qr-code";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MapPin, Users, Ticket, CheckCircle2, Clock } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, Calendar, MapPin, Users, Ticket, CheckCircle2, Clock, User } from "lucide-react";
 
 interface BookingTicketProps {
   booking: any;
@@ -24,91 +23,117 @@ export function BookingTicket({ booking, onClose }: BookingTicketProps) {
         className="absolute inset-0 bg-brand-dark-green/60 backdrop-blur-md"
       />
 
-      {/* Ticket Card */}
+      {/* Movie Ticket Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-sm bg-white rounded-[2rem] overflow-hidden shadow-2xl"
+        className="relative w-full max-w-sm bg-white rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
       >
-        {/* Header */}
-        <div className="bg-brand-dark-green p-6 text-white relative">
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
-          >
-            <X size={20} />
-          </button>
+        {/* Aesthetic Notches (Punch Holes) */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-black/60 rounded-full z-20 backdrop-blur-md" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-black/60 rounded-full z-20 backdrop-blur-md" />
+
+        {/* Header Section */}
+        <div className="bg-black p-8 text-white relative">
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <img src="/logo.png" alt="SRR Logo" className="w-10 h-10 object-contain brightness-100" />
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors text-brand-gold"
+            >
+              <X size={20} />
+            </button>
+          </div>
           
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-brand-gold/20 rounded-lg">
               <Ticket className="w-5 h-5 text-brand-gold" />
             </div>
-            <span className="text-sm font-black tracking-widest uppercase opacity-70">Official Token</span>
+            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-brand-gold/70">Entry Token</span>
           </div>
-          <h2 className="text-2xl font-black">Digital Pass</h2>
-          <p className="text-white/60 text-xs mt-1 font-mono uppercase tracking-widest">ID: {booking.id}</p>
+          
+          <h2 className="text-3xl font-black tracking-tight leading-none mb-2 text-brand-gold">Digital Pass</h2>
+          <div className="flex items-center gap-2 px-3 py-1 bg-brand-gold/10 rounded-full w-fit border border-brand-gold/20">
+            <div className={`w-2 h-2 rounded-full ${booking.status === 'CONFIRMED' ? 'bg-green-400' : 'bg-brand-gold animate-pulse'}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-gold">
+              {booking.status}
+            </span>
+          </div>
         </div>
 
-        {/* Status Bar */}
-        <div className={`px-6 py-2 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest ${
-          booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-600' : 'bg-brand-gold/10 text-brand-gold'
-        }`}>
-          {booking.status === 'CONFIRMED' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-          {booking.status}
+        {/* Perforated Divider */}
+        <div className="relative h-4 bg-white flex items-center justify-center px-4">
+          <div className="w-full border-t-2 border-dashed border-gray-100" />
         </div>
 
-        {/* Content */}
-        <div className="p-8 space-y-6">
-          {/* QR Code Container */}
-          <div className="bg-gray-50 p-6 rounded-3xl flex flex-col items-center justify-center border border-gray-100 shadow-inner">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <QRCode 
-                value={booking.id} 
-                size={160}
-                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                viewBox={`0 0 256 256`}
-              />
+        {/* Details Section */}
+        <div className="p-8 pt-4 space-y-8 flex-1">
+          {/* Main Identifiers */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Guest Name</p>
+              <div className="flex items-center gap-2">
+                <User size={14} className="text-brand-gold" />
+                <p className="text-sm font-black text-brand-dark-green truncate">{booking.name}</p>
+              </div>
             </div>
-            <p className="mt-4 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Scan at check-in</p>
+            <div className="space-y-1 text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Booking ID</p>
+              <p className="text-sm font-mono font-bold text-gray-800">#{booking.id?.slice(-6).toUpperCase()}</p>
+            </div>
           </div>
 
-          {/* Details */}
-          <div className="space-y-4">
+          <div className="bg-brand-dark-green/[0.03] p-6 rounded-[2rem] border border-gray-50 space-y-5">
             <div className="flex items-start gap-4">
-              <div className="mt-1 p-2 bg-gray-50 rounded-lg text-brand-gold"><Calendar size={16}/></div>
+              <div className="mt-1 p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-brand-gold"><Calendar size={18}/></div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Stay Dates</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {booking.start_date || booking.date} {booking.end_date ? `- ${booking.end_date}` : ""}
-                </p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Stay / Event Category</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-black text-gray-800">
+                    {booking.start_date || booking.date} {booking.check_in_time ? `@ ${booking.check_in_time}` : ""}
+                  </p>
+                  {booking.end_date && (
+                    <p className="text-sm font-black text-gray-800">
+                      to {booking.end_date} {booking.check_out_time ? `@ ${booking.check_out_time}` : ""}
+                    </p>
+                  )}
+                </div>
+
               </div>
             </div>
 
             <div className="flex items-start gap-4">
-              <div className="mt-1 p-2 bg-gray-50 rounded-lg text-brand-gold"><MapPin size={16}/></div>
+              <div className="mt-1 p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-brand-gold"><MapPin size={18}/></div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Service</p>
-                <p className="text-sm font-bold text-gray-800">{booking.service_type || "Resort Experience"}</p>
-                <p className="text-xs text-brand-green font-medium">Items: {booking.items?.join(", ") || "Booking Details"}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Service Details</p>
+                <p className="text-sm font-black text-gray-800">{booking.service_type || "Luxury Experience"}</p>
+                <p className="text-[10px] text-brand-sunset-start font-bold uppercase mt-0.5">{booking.items?.join(" • ")}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-4">
-              <div className="mt-1 p-2 bg-gray-50 rounded-lg text-brand-gold"><Users size={16}/></div>
+              <div className="mt-1 p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-brand-gold"><Users size={18}/></div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Occupancy</p>
-                <p className="text-sm font-bold text-gray-800">{booking.guests} Guests</p>
+                <p className="text-sm font-black text-gray-800">{booking.guests} {booking.guests > 1 ? 'Persons' : 'Person'}</p>
               </div>
             </div>
+          </div>
+
+          {/* Token ID (The "Movie Ticket" Code) */}
+          <div className="text-center space-y-2 py-4 border-2 border-dashed border-brand-gold/20 rounded-3xl bg-brand-gold/[0.02]">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-gold/60">Unique Token ID</p>
+            <p className="text-3xl font-black text-brand-dark-green tracking-tighter uppercase">
+              {booking.token_id || booking.id?.slice(0, 8).toUpperCase() || "SRR-PASS"}
+            </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-0 text-center">
-            <div className="border-t border-dashed border-gray-200 mt-2 mb-6" />
-            <p className="text-[10px] text-gray-400 leading-relaxed max-w-[200px] mx-auto uppercase font-bold tracking-tight">
-                Valid only for SRR Resort & Convention Lakkarm Premises. Use by authorized person only.
+        <div className="bg-gray-50 p-6 text-center">
+            <p className="text-[9px] text-gray-400 leading-relaxed font-black uppercase tracking-tighter opacity-70">
+                Purity You Can Trust • SRR Resort & Convention • Lakkarm Premises • Verify token at check-in counter
             </p>
         </div>
       </motion.div>

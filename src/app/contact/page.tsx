@@ -1,4 +1,13 @@
+import { Metadata } from "next";
 import { MapPin, Phone, Mail } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description: "Contact SRR Resorts & Convention for bookings, inquiries, and event planning. Located in Choutuppal, we are here to provide the best hospitality experience.",
+  alternates: {
+    canonical: "https://srrresorts.com/contact",
+  },
+};
 
 export default function ContactPage() {
   return (

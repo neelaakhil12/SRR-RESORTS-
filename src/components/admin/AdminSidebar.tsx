@@ -28,7 +28,7 @@ export function AdminSidebar() {
 
   const handleSignOut = async () => {
     await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/login");
+    router.push("/admin-login");
     router.refresh();
   };
 

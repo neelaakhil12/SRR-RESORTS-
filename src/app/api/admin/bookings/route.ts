@@ -10,7 +10,9 @@ export async function GET() {
     const formattedBookings = bookings.map((b: any) => ({
       ...b,
       id: b._id.toString(),
-      _id: undefined
+      _id: undefined,
+      start_date: b.start_date || b.date || "", // Fallback for admin panel compatibility
+      end_date: b.end_date || b.date || ""
     }));
 
     return NextResponse.json(formattedBookings);

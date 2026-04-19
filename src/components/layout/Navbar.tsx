@@ -12,9 +12,22 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const { user, loading } = useAuth();
+  const [announcement, setAnnouncement] = useState<{ text: string, active: boolean } | null>(null);
 
   // Scroll detection for mobile bottom nav
   useEffect(() => {
+    // Fetch announcement
+    const fetchAnnouncement = async () => {
+      try {
+        const res = await fetch("/api/settings?key=announcement");
+        const data = await res.json();
+        if (data?.value) setAnnouncement(data.value);
+      } catch (err) {
+        console.error("Failed to fetch announcement", err);
+      }
+    };
+    fetchAnnouncement();
+
     let timeout: NodeJS.Timeout;
     const handleScroll = () => {
       // Hide on scroll
@@ -66,6 +79,28 @@ export function Navbar() {
   return (
     <>
     <header className="z-50 w-full sticky top-0 bg-brand-dark-green shadow-lg">
+      {announcement?.active && announcement?.text && (
+        <div className="bg-sunset-gradient py-2 overflow-hidden whitespace-nowrap relative border-b border-white/10 group">
+          <motion.div 
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ 
+              duration: 25, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+            className="inline-flex items-center gap-20"
+          >
+            {/* Duplicate content for seamless loop */}
+            {[...Array(6)].map((_, i) => (
+              <p key={i} className="text-[10px] md:text-xs font-bold text-white tracking-[0.3em] uppercase flex items-center gap-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />
+                {announcement.text}
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />
+              </p>
+            ))}
+          </motion.div>
+        </div>
+      )}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Top Header Bar */}
         <div className="flex h-16 lg:h-20 items-center justify-between">

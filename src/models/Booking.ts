@@ -12,7 +12,14 @@ const BookingSchema = new mongoose.Schema(
     time_slot: { type: String },
     start_date: { type: String }, // For stays
     end_date: { type: String }, // For stays
+    check_in_time: { type: String, default: "06:00" },
+    check_out_time: { type: String, default: "22:00" },
+    duration: { type: Number, default: 1 }, // For leisure/hourly services
+
     guests: { type: Number, required: true, min: 1 },
+    is_stayer: { type: Boolean, default: false },
+    room_number: { type: String },
+    token_id: { type: String },
     special_requests: { type: String },
     status: { 
       type: String, 
@@ -33,7 +40,10 @@ const BookingSchema = new mongoose.Schema(
         type: String, 
         default: 'PENDING',
         enum: ['PENDING', 'PAID', 'PARTIAL', 'REFUNDED'] 
-    }
+    },
+    razorpay_order_id: { type: String },
+    razorpay_payment_id: { type: String },
+    razorpay_signature: { type: String }
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );

@@ -29,6 +29,10 @@ export default function AdminSettings() {
     backgroundImage: "",
     ctaText: ""
   });
+  const [announcement, setAnnouncement] = useState({
+    text: "",
+    active: false
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -42,6 +46,10 @@ export default function AdminSettings() {
       const hRes = await fetch("/api/admin/settings?key=hero");
       const hData = await hRes.json();
       if (hData?.value) setHero(hData.value);
+
+      const aRes = await fetch("/api/admin/settings?key=announcement");
+      const aData = await aRes.json();
+      if (aData?.value) setAnnouncement(aData.value);
     } catch (err) {
       console.error("Failed to fetch settings", err);
     } finally {
@@ -57,6 +65,12 @@ export default function AdminSettings() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "hero", value: hero })
+      });
+
+      await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "announcement", value: announcement })
       });
       alert("Settings saved successfully!");
     } catch (err) {
@@ -189,6 +203,50 @@ export default function AdminSettings() {
                     </div>
                     <p className="text-[10px] text-gray-400 text-center mt-2">Recommended size: 1920x1080px (JPEG or WebP)</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Announcement Ticker Card */}
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-brand-sunset-start/10 rounded-2xl text-brand-sunset-start">
+                    <Layout className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-[#0b1a10]">Announcement Ticker</h2>
+                    <p className="text-sm text-gray-400">The scrolling message at the top of the website.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl px-4 border border-gray-100">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${announcement.active ? 'text-green-500' : 'text-gray-400'}`}>
+                    {announcement.active ? 'Active' : 'Inactive'}
+                  </span>
+                  <button 
+                    onClick={() => setAnnouncement({...announcement, active: !announcement.active})}
+                    className={`relative w-12 h-6 rounded-full transition-all duration-300 ${announcement.active ? 'bg-green-500 shadow-lg shadow-green-500/30' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${announcement.active ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Ticker Message</label>
+                  <div className="relative">
+                    <Type className="absolute left-4 top-4 w-4 h-4 text-gray-400" />
+                    <textarea 
+                      value={announcement.text} 
+                      onChange={e => setAnnouncement({...announcement, text: e.target.value})}
+                      rows={2}
+                      className="w-full bg-gray-50 border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold resize-none"
+                      placeholder="e.g. Booking will be opened in June..."
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 ml-1 italic">* This will scroll infinitely from right to left.</p>
                 </div>
               </div>
             </div>

@@ -50,6 +50,17 @@ export default function BookingsManagement() {
     fetchBookings();
   }, []);
 
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return "N/A";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "Invalid Date";
+      return format(date, 'MMM dd, yyyy');
+    } catch (err) {
+      return "Format Error";
+    }
+  };
+
   const fetchBookings = async () => {
     try {
       const res = await fetch("/api/admin/bookings");
@@ -192,7 +203,7 @@ export default function BookingsManagement() {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <p className="text-sm font-bold text-[#0b1a10]">{format(new Date(bkg.start_date), 'MMM dd, yyyy')}</p>
+                      <p className="text-sm font-bold text-[#0b1a10]">{safeFormatDate(bkg.start_date)}</p>
                       <p className="text-xs text-gray-400">{bkg.booking_source}</p>
                     </td>
                     <td className="px-8 py-6">
