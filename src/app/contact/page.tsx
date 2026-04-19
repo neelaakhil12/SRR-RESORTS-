@@ -98,7 +98,7 @@ export default function ContactPage() {
           </div>
           <div className="mt-8 text-center">
             <a 
-              href="https://maps.app.goo.gl/M4cE2zspb1Hbno3L9?g_st=ic" 
+              href="https://maps.app.goo.gl/mSrzT1v9DHBVwcn78?g_st=iw" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-brand-dark-green hover:bg-black text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95"
