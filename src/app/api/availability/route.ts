@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const endTime = searchParams.get("endTime") || "22:00";
   const type = searchParams.get("type"); // "ROOM" or "HALL" or "HOUSE"
 
-  if (!startDate || !type) {
+  if (!startDate || !endDate || !type) {
     return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
   }
 
@@ -41,8 +41,8 @@ export async function GET(request: Request) {
       return `${d}T${t}`;
     };
 
-    const reqStart = toTimestamp(startDate, startTime);
-    const reqEnd = toTimestamp(endDate, endTime);
+    const reqStart = toTimestamp(startDate!, startTime);
+    const reqEnd = toTimestamp(endDate!, endTime);
 
     const activeBookings = bookings.filter((b: any) => {
       // 1. Leisure/Hourly check
