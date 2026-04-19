@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import Booking from "@/models/Booking";
+import { sendBookingConfirmation } from "@/lib/email";
 
 export async function GET() {
   try {
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
       ...booking.toObject(),
       id: booking._id.toString()
     };
+
+    // Trigger confirmation email
+    // We don't await this to avoid slowing down the response
+    sendBookingConfirmation(formattedData);
 
     return NextResponse.json(formattedData);
   } catch (error: any) {
