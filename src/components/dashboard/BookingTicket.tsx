@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { X, Calendar, MapPin, Users, Ticket, CheckCircle2, Clock, User, Download } from "lucide-react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { domToPng } from "modern-screenshot";
 import { useRef } from "react";
 
 interface BookingTicketProps {
@@ -27,37 +27,37 @@ export function BookingTicket({ booking, onClose }: BookingTicketProps) {
       const downloadSection = element.querySelector('.download-section');
       if (downloadSection) (downloadSection as HTMLElement).style.display = 'none';
 
-      // Wait a bit for any potential animations or fonts to settle
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const canvas = await html2canvas(element, {
-        scale: 3, // High quality
-        backgroundColor: "#ffffff", // Solid background is safer
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        height: element.offsetHeight,
-        width: element.offsetWidth,
-        scrollX: 0,
-        scrollY: -window.scrollY // Fix for offset issues
+      // Capture using modern-screenshot (supports oklab/oklch)
+      const dataUrl = await domToPng(element, {
+        scale: 3,
+        features: {
+          // Ensure fonts and images are captured
+          font: true,
+          image: true
+        }
       });
 
       if (downloadSection) (downloadSection as HTMLElement).style.display = 'flex';
-
-      const imgData = canvas.toDataURL("image/png");
       
-      // Calculate dimensions to fit PDF (A4 or Custom)
+      // Get base64 string
+      const imgData = dataUrl;
+      
+      // Create a temporary image to get dimensions for the PDF
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise(resolve => img.onload = resolve);
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: [canvas.width * 0.264583 / 3, canvas.height * 0.264583 / 3]
+        format: [img.width * 0.264583 / 3, img.height * 0.264583 / 3]
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+      pdf.addImage(imgData, "PNG", 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), undefined, 'FAST');
       pdf.save(`SRR-TOKEN-${booking.id?.slice(-6).toUpperCase()}.pdf`);
     } catch (error) {
       console.error("PDF generation failed:", error);
-      alert("PDF generation failed. Please refresh and try again.");
+      alert("PDF generation failed. This might be due to browser security settings. Please try again or take a screenshot.");
     }
   };
 
