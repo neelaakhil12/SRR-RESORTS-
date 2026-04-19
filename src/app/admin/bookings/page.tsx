@@ -17,7 +17,10 @@ import {
   CreditCard,
   MapPin,
   X,
-  Check
+  Check,
+  Mail,
+  Phone,
+  Users
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { format } from "date-fns";
@@ -95,10 +98,13 @@ export default function BookingsManagement() {
     
     const body = {
       ...data,
+      total_amount: Number(data.total_amount),
+      guests: Number(data.guests || 1),
       items: [data.service_name],
       service_type: data.service_name.toString().toUpperCase().includes('ROOM') ? 'ROOM' : 'HALL',
       booking_source: 'WALK_IN',
-      status: 'CONFIRMED'
+      status: 'CONFIRMED',
+      payment_status: 'PAID'
     };
 
     try {
@@ -274,7 +280,7 @@ export default function BookingsManagement() {
               </div>
 
                <form onSubmit={handleManualBooking} className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Guest Name</label>
                     <div className="relative">
@@ -282,6 +288,33 @@ export default function BookingsManagement() {
                        <input name="name" required className="w-full bg-gray-50 border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" placeholder="Guest Name" />
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Guest Email</label>
+                    <div className="relative">
+                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                       <input name="email" type="email" required className="w-full bg-gray-50 border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" placeholder="guest@example.com" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Phone Number</label>
+                    <div className="relative">
+                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                       <input name="phone" required className="w-full bg-gray-50 border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" placeholder="+91 ..." />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Number of Guests</label>
+                    <div className="relative">
+                       <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                       <input name="guests" type="number" min="1" required className="w-full bg-gray-50 border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" placeholder="1" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Selected Service</label>
                     <select name="service_name" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold appearance-none">
@@ -291,20 +324,19 @@ export default function BookingsManagement() {
                       <option value="Independent House 1">Independent House 1</option>
                     </select>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Start Date</label>
+                      <input name="start_date" type="date" required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">End Date</label>
+                      <input name="end_date" type="date" required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Start Date</label>
-                    <input name="start_date" type="date" required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">End Date</label>
-                    <input name="end_date" type="date" required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Total Amount (₹)</label>
                     <div className="relative">

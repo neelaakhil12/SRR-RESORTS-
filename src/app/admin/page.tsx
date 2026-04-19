@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { StatCard } from "@/components/admin/StatCard";
+import Link from "next/link";
 
 export default function AdminPanel() {
   const [stats, setStats] = useState({
@@ -54,9 +55,9 @@ export default function AdminPanel() {
             <p className="text-gray-400 font-medium mt-2">Welcome back. Here's what's happening today at SRR Resorts.</p>
           </div>
           <div className="flex items-center gap-4">
-             <button className="bg-[#0b1a10] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10">
+             <Link href="/admin/bookings" className="bg-[#0b1a10] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10">
                <Plus className="w-5 h-5 text-brand-gold" /> Manual Booking
-             </button>
+             </Link>
           </div>
         </header>
         
@@ -122,7 +123,7 @@ export default function AdminPanel() {
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8">
             <h2 className="text-2xl font-bold text-[#0b1a10] mb-8">Quick Actions</h2>
             <div className="space-y-4">
-              <button className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-gold/10 transition-all group border border-gray-50">
+              <Link href="/admin/bookings" className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-gold/10 transition-all group border border-gray-50">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white rounded-2xl shadow-sm text-brand-sunset-start">
                     <Calendar className="w-5 h-5" />
@@ -133,7 +134,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 <ArrowUpRight className="w-5 h-5 text-gray-300 group-hover:text-brand-sunset-start transition-colors" />
-              </button>
+              </Link>
 
               <button className="w-full flex items-center justify-between p-5 bg-srr-cream/30 rounded-3xl hover:bg-brand-green/10 transition-all group border border-gray-50">
                 <div className="flex items-center gap-4">
