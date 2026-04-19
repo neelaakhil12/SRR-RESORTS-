@@ -2,7 +2,8 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { X, Calendar, MapPin, Users, Ticket, CheckCircle2, Clock, User } from "lucide-react";
+import { X, Calendar, MapPin, Users, Ticket, CheckCircle2, Clock, User, Download } from "lucide-react";
+import jsPDF from "jspdf";
 
 interface BookingTicketProps {
   booking: any;
@@ -11,6 +12,105 @@ interface BookingTicketProps {
 
 export function BookingTicket({ booking, onClose }: BookingTicketProps) {
   if (!booking) return null;
+
+  const handleDownload = () => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [100, 150]
+    });
+
+    // Branding Colors
+    const darkGreen = [11, 26, 16];
+    const gold = [197, 160, 89];
+
+    // Header Background
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, 0, 100, 45, 'F');
+
+    // Logo Placeholder or Text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("SRR RESORTS", 50, 15, { align: "center" });
+
+    doc.setTextColor(gold[0], gold[1], gold[2]);
+    doc.setFontSize(10);
+    doc.text("PURITY YOU CAN TRUST", 50, 22, { align: "center" });
+
+    doc.setDrawColor(gold[0], gold[1], gold[2]);
+    doc.setLineWidth(0.5);
+    doc.line(30, 25, 70, 25);
+
+    doc.setFontSize(14);
+    doc.text("DIGITAL PASS", 50, 35, { align: "center" });
+
+    // Perforation
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineDashPattern([2, 1], 0);
+    doc.line(0, 48, 100, 48);
+    doc.setLineDashPattern([], 0);
+
+    // Guest Details
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text("GUEST NAME", 10, 60);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(booking.name || "Guest", 10, 65);
+
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text("BOOKING ID", 90, 60, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(`#${(booking.id || "").slice(-6).toUpperCase()}`, 90, 65, { align: "right" });
+
+    // Details Card
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(10, 75, 80, 40, 5, 5, 'F');
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(7);
+    doc.text("SERVICE TYPE", 15, 82);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.text(booking.service_type || "Resort Stay", 15, 87);
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(7);
+    doc.text("DATE & TIME", 15, 95);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.text(`${booking.start_date || booking.date} @ ${booking.check_in_time || "06:00 AM"}`, 15, 100);
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(7);
+    doc.text("ITEMS", 15, 108);
+    doc.setTextColor(215, 70, 35); // sunset orange
+    doc.setFontSize(8);
+    doc.text((booking.items || []).join(" • "), 15, 113, { maxWidth: 70 });
+
+    // Token ID
+    doc.setDrawColor(gold[0], gold[1], gold[2]);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(10, 122, 80, 15, 3, 3, 'D');
+    
+    doc.setTextColor(gold[0], gold[1], gold[2]);
+    doc.setFontSize(7);
+    doc.text("UNIQUE TOKEN ID", 50, 127, { align: "center" });
+    
+    doc.setTextColor(darkGreen[0], darkGreen[1], darkGreen[2]);
+    doc.setFontSize(14);
+    doc.text(booking.token_id || booking.id?.slice(0, 8).toUpperCase() || "SRR-PASS", 50, 134, { align: "center" });
+
+    // Footer
+    doc.setTextColor(180, 180, 180);
+    doc.setFontSize(6);
+    doc.text("SRR RESORT & CONVENTION • LAKKARM PREMISES", 50, 145, { align: "center" });
+
+    doc.save(`SRR-TOKEN-${booking.id?.slice(-6).toUpperCase()}.pdf`);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -131,8 +231,14 @@ export function BookingTicket({ booking, onClose }: BookingTicketProps) {
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 p-6 text-center">
-            <p className="text-[9px] text-gray-400 leading-relaxed font-black uppercase tracking-tighter opacity-70">
+        <div className="bg-gray-50 p-6 flex flex-col gap-3">
+            <button 
+              onClick={handleDownload}
+              className="w-full flex items-center justify-center gap-2 bg-brand-gold text-white py-3 rounded-xl font-black text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-md uppercase tracking-widest"
+            >
+              <Download size={14} /> Download PDF Ticket
+            </button>
+            <p className="text-[9px] text-gray-400 leading-relaxed font-black uppercase tracking-tighter opacity-70 text-center">
                 Purity You Can Trust • SRR Resort & Convention • Lakkarm Premises • Verify token at check-in counter
             </p>
         </div>

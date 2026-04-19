@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { CalendarDays, Download, MapPin, Receipt, Star, Loader2, Ticket as TicketIcon } from "lucide-react";
+import { CalendarDays, Download, MapPin, Receipt, Star, Loader2, Ticket as TicketIcon, Eye } from "lucide-react";
 import { BookingTicket } from "@/components/dashboard/BookingTicket";
 import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                           onClick={() => setSelectedBooking(bkg)}
                           className="w-full sm:w-auto flex items-center justify-center gap-3 bg-brand-dark-green text-white px-8 py-4 rounded-2xl font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
                         >
-                          <Download size={18} /> View Token
+                          <Eye size={18} /> View Token
                         </button>
                       </div>
                     </div>
