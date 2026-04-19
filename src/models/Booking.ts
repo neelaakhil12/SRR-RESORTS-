@@ -43,7 +43,8 @@ const BookingSchema = new mongoose.Schema(
     },
     razorpay_order_id: { type: String },
     razorpay_payment_id: { type: String },
-    razorpay_signature: { type: String }
+    razorpay_signature: { type: String },
+    aadhar_url: { type: String }
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );

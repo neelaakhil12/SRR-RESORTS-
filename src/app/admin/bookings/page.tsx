@@ -36,6 +36,7 @@ interface Booking {
   payment_method?: string;
   booking_source: string;
   created_at: string;
+  aadhar_url?: string;
 }
 
 export default function BookingsManagement() {
@@ -185,6 +186,7 @@ export default function BookingsManagement() {
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Stay Duration</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Amount</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">ID proof</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Action</th>
                 </tr>
               </thead>
@@ -220,6 +222,20 @@ export default function BookingsManagement() {
                       }`}>
                         {bkg.status}
                       </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      {bkg.aadhar_url ? (
+                        <a 
+                          href={bkg.aadhar_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-brand-gold hover:underline flex items-center gap-1"
+                        >
+                          <CreditCard className="w-3 h-3" /> View Aadhar
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-300">N/A</span>
+                      )}
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

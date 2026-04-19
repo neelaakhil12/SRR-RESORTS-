@@ -403,8 +403,25 @@ export default function ServicesContent() {
 
     setIsProcessing(true);
     
-    let bookingId = "";
+    let aadharUrl = "";
     try {
+      // 1. Upload Aadhar if exists
+      if (formData.aadharFile) {
+        const uploadForm = new FormData();
+        uploadForm.append("file", formData.aadharFile);
+        uploadForm.append("folder", "aadhar_cards");
+        
+        const uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: uploadForm
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadRes.status === 200) {
+          aadharUrl = uploadData.url;
+        }
+      }
+
+      // 2. Prepare booking data
       const bookingData = {
         name: formData.name,
         email: formData.email || (formData.isStayer ? `stayer-${formData.roomNumber}@srr.com` : ""),
@@ -424,6 +441,7 @@ export default function ServicesContent() {
         is_stayer: formData.isStayer,
         room_number: formData.roomNumber,
         token_id: formData.tokenId,
+        aadhar_url: aadharUrl,
         status: (formData.isStayer || totalPrice === 0) ? 'CONFIRMED' : 'PENDING'
       };
 
@@ -434,16 +452,16 @@ export default function ServicesContent() {
         body: JSON.stringify(bookingData)
       });
       const data = await res.json();
-      bookingId = data.id;
+      const bookingId = data.id;
 
       if (!bookingId) throw new Error("Failed to create booking reference");
 
-      // If it's a paid booking and not a stayer, proceed to payment
+      // 3. If it's a paid booking and not a stayer, proceed to payment
       if (totalPrice > 0 && !formData.isStayer) {
-        await initiatePayment(totalPrice, bookingId);
+        await initiatePayment(totalPrice, bookingId, aadharUrl);
       } else {
         // For free/stayer bookings, complete immediately
-        completeBooking(formData, serviceName, totalPrice, itemsList);
+        completeBooking(formData, serviceName, totalPrice, itemsList, aadharUrl);
       }
     } catch (err: any) {
       console.error("Booking failed:", err);
@@ -453,7 +471,7 @@ export default function ServicesContent() {
     }
   };
 
-  const initiatePayment = async (amount: number, bookingId: string) => {
+  const initiatePayment = async (amount: number, bookingId: string, aadharUrl: string = "") => {
     try {
       // 1. Create order on server
       const orderRes = await fetch("/api/payment/order", {
@@ -489,7 +507,7 @@ export default function ServicesContent() {
 
           const verifyData = await verifyRes.json();
           if (verifyRes.status === 200) {
-            completeBooking(formData, services.find(s => s.id === activeModal)?.name || "Service", amount, formData.items.join(", "));
+            completeBooking(formData, services.find(s => s.id === activeModal)?.name || "Service", amount, formData.items.join(", "), aadharUrl);
           } else {
             alert("Payment verification failed. Please contact support.");
           }
@@ -513,22 +531,37 @@ export default function ServicesContent() {
     }
   };
 
-  const completeBooking = (data: any, serviceName: string, totalPrice: number, itemsList: string) => {
-    // Construct WhatsApp message (Keep this as a backup/record notification)
+  const completeBooking = (data: any, serviceName: string, totalPrice: number, itemsList: string, aadharUrl: string = "") => {
+    // Construct WhatsApp message with ALL details
     let message = `*SRR Resorts Booking Confirmed*\n\n`;
+    message += `*--- Guest Details ---*\n`;
     message += `*Name:* ${data.name}\n`;
     message += `*Phone:* ${data.phone}\n`;
+    message += `*Email:* ${data.email || 'N/A'}\n`;
+    message += `*Guests:* ${data.guests}\n\n`;
+    
+    message += `*--- Stay Details ---*\n`;
+    message += `*Service:* ${serviceName}\n`;
+    message += `*Selections:* ${itemsList}\n`;
+    message += `*Check-in:* ${data.date} (${data.checkInTime || data.time})\n`;
+    if (data.checkOutDate) message += `*Check-out:* ${data.checkOutDate} (${data.checkOutTime})\n`;
+    if (data.durationHours > 1) message += `*Duration:* ${data.durationHours} Hours\n`;
+    message += `\n`;
+
+    message += `*--- Payment Summary ---*\n`;
     if (data.isStayer) {
       message += `*Guest Type:* Resort Stayer (Free Access)\n`;
       message += `*Room No:* ${data.roomNumber}\n`;
     } else {
-      message += `*Payment:* PAID ONLINE\n`;
+      message += `*Status:* PAID ONLINE\n`;
+      message += `*Total Amount:* ₹${totalPrice.toLocaleString()}\n`;
     }
-    message += `*Service:* ${serviceName}\n`;
-    message += `*Check-in:* ${data.date}\n`;
-    if (data.checkOutDate) message += `*Check-out:* ${data.checkOutDate}\n`;
-    message += `*Selections:* ${itemsList}\n`;
-    message += `*Total Amount:* ₹${totalPrice.toLocaleString()}\n`;
+    message += `\n`;
+
+    if (aadharUrl) {
+      message += `*--- Identification ---*\n`;
+      message += `*Aadhar Card Link:* ${aadharUrl}\n`;
+    }
     
     const whatsappUrl = `https://wa.me/917702199889?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
