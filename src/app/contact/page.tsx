@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { MapPin, Phone, Mail } from "lucide-react";
+import ContactForm from "@/components/contact/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -63,23 +64,7 @@ export default function ContactPage() {
           </div>
           
           {/* Contact Form */}
-          <form className="bg-white p-8 rounded-2xl shadow-sm border border-black/5 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-brand-dark-green mb-2">Name</label>
-              <input type="text" className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-sunset-start" placeholder="Your Name" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-brand-dark-green mb-2">Email</label>
-              <input type="email" className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-sunset-start" placeholder="Your Email" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-brand-dark-green mb-2">Message</label>
-              <textarea rows={4} className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-sunset-start" placeholder="How can we help?" />
-            </div>
-            <button type="button" className="w-full bg-sunset-gradient text-white rounded-lg px-4 py-3 font-semibold hover:opacity-90 transition-opacity">
-              Send Message
-            </button>
-          </form>
+          <ContactForm />
         </div>
 
         {/* Google Maps Section */}
