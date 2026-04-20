@@ -959,7 +959,6 @@ export default function ServicesContent() {
         </div>
       )}
       
-      </AnimatePresence>
     </div>
   );
 }
