@@ -65,26 +65,48 @@ export async function sendBookingConfirmation(booking: any) {
           <p class="intro">Your reservation at <span class="brand-text">SRR Resorts</span> is confirmed. We've locked in your choices and our team is preparing for your arrival.</p>
           
           <div class="card">
-            <div class="detail-row">
-              <span class="detail-label">Service</span>
-              <span class="detail-value">${service_type}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Selections</span>
-              <span class="detail-value">${itemsList}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Date</span>
-              <span class="detail-value">${start_date}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Time</span>
-              <span class="detail-value">${check_in_time}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Contact</span>
-              <span class="detail-value">${booking.phone}</span>
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Service</span>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;" align="right">
+                  <span style="color: #0b1a10; font-size: 14px; font-weight: 700;">${service_type}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Selections</span>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;" align="right">
+                  <span style="color: #0b1a10; font-size: 14px; font-weight: 700;">${itemsList}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Date</span>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;" align="right">
+                  <span style="color: #0b1a10; font-size: 14px; font-weight: 700;">${start_date}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Time</span>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;" align="right">
+                  <span style="color: #0b1a10; font-size: 14px; font-weight: 700;">${check_in_time}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0;">
+                  <span style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Contact</span>
+                </td>
+                <td style="padding: 12px 0;" align="right">
+                  <span style="color: #0b1a10; font-size: 14px; font-weight: 700;">${booking.phone}</span>
+                </td>
+              </tr>
+            </table>
           </div>
 
           <div class="button-container">

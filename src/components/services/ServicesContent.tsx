@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
+import { buildWhatsAppMessage, openWhatsApp } from "@/lib/whatsapp";
 import { 
   Calendar as CalendarIcon, 
   CheckCircle2, 
@@ -120,6 +121,7 @@ export default function ServicesContent() {
   const [activeModal, setActiveModal] = useState<BookingMode>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [whatsappMessage, setWhatsappMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -166,6 +168,16 @@ export default function ServicesContent() {
     setFormData({ ...formData, [type]: time24 });
   };
 
+  // Auto-fill user details from session
+  useEffect(() => {
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || session.user?.name || "",
+        email: prev.email || session.user?.email || "",
+      }));
+    }
+  }, [session]);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -197,12 +209,16 @@ export default function ServicesContent() {
 
     let days = 1;
     if (formData.date && formData.checkOutDate && (activeModal === 'ROOM' || activeModal === 'HOUSE')) {
-      const start = new Date(formData.date);
-      const end = new Date(formData.checkOutDate);
-      if (end >= start) {
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        days = diffDays + 1;
+      const startDateTime = new Date(`${formData.date}T${formData.checkInTime}`);
+      const endDateTime = new Date(`${formData.checkOutDate}T${formData.checkOutTime}`);
+
+      if (endDateTime > startDateTime) {
+        const diffInMs = endDateTime.getTime() - startDateTime.getTime();
+        const diffInHours = diffInMs / (1000 * 60 * 60);
+        // Every 24-hour cycle (or fraction thereof) counts as a day
+        days = Math.ceil(diffInHours / 24);
+      } else {
+        days = 1;
       }
     }
 
@@ -363,24 +379,24 @@ export default function ServicesContent() {
       return;
     }
 
-    setFormData({
-      name: "",
-      phone: "",
-      email: "",
+    setFormData(prev => ({
+      name: prev.name,
+      phone: prev.phone,
+      email: prev.email,
       date: "",
       checkOutDate: "",
       checkInTime: "06:00",
       checkOutTime: "22:00",
       time: "",
       durationHours: 1,
-      houseBookingType: "individual",
+      houseBookingType: "individual" as "individual" | "cluster",
       items: [],
       aadharFile: null,
       isStayer: false,
       roomNumber: "",
       tokenId: "",
       guests: 1
-    });
+    }));
 
     setIsSuccess(false);
     setActiveModal(serviceId as BookingMode);
@@ -507,7 +523,7 @@ export default function ServicesContent() {
 
           const verifyData = await verifyRes.json();
           if (verifyRes.status === 200) {
-            completeBooking(formData, services.find(s => s.id === activeModal)?.name || "Service", amount, formData.items.join(", "), aadharUrl);
+            completeBooking(formData, services.find(s => s.id === activeModal)?.name || "Service", amount, formData.items.join(", "), aadharUrl, bookingId);
           } else {
             alert("Payment verification failed. Please contact support.");
           }
@@ -531,40 +547,29 @@ export default function ServicesContent() {
     }
   };
 
-  const completeBooking = (data: any, serviceName: string, totalPrice: number, itemsList: string, aadharUrl: string = "") => {
-    // Construct WhatsApp message with ALL details
-    let message = `*SRR Resorts Booking Confirmed*\n\n`;
-    message += `*--- Guest Details ---*\n`;
-    message += `*Name:* ${data.name}\n`;
-    message += `*Phone:* ${data.phone}\n`;
-    message += `*Email:* ${data.email || 'N/A'}\n`;
-    message += `*Guests:* ${data.guests}\n\n`;
-    
-    message += `*--- Stay Details ---*\n`;
-    message += `*Service:* ${serviceName}\n`;
-    message += `*Selections:* ${itemsList}\n`;
-    message += `*Check-in:* ${data.date} (${data.checkInTime || data.time})\n`;
-    if (data.checkOutDate) message += `*Check-out:* ${data.checkOutDate} (${data.checkOutTime})\n`;
-    if (data.durationHours > 1) message += `*Duration:* ${data.durationHours} Hours\n`;
-    message += `\n`;
+  const completeBooking = (data: any, serviceName: string, totalPrice: number, itemsList: string, aadharUrl: string = "", bookingId?: string) => {
+    const message = buildWhatsAppMessage({
+      name: data.name,
+      phone: data.phone,
+      email: data.email || undefined,
+      guests: data.guests,
+      serviceName,
+      items: itemsList ? itemsList.split(", ") : [],
+      date: data.date,
+      checkOutDate: data.checkOutDate || undefined,
+      checkInTime: data.checkInTime || undefined,
+      checkOutTime: data.checkOutTime || undefined,
+      timeSlot: data.time || undefined,
+      durationHours: data.durationHours,
+      totalAmount: totalPrice,
+      paymentMethod: data.isStayer ? undefined : "ONLINE",
+      isStayer: data.isStayer,
+      roomNumber: data.roomNumber || undefined,
+      aadharUrl: aadharUrl || undefined,
+      bookingId,
+    });
 
-    message += `*--- Payment Summary ---*\n`;
-    if (data.isStayer) {
-      message += `*Guest Type:* Resort Stayer (Free Access)\n`;
-      message += `*Room No:* ${data.roomNumber}\n`;
-    } else {
-      message += `*Status:* PAID ONLINE\n`;
-      message += `*Total Amount:* ₹${totalPrice.toLocaleString()}\n`;
-    }
-    message += `\n`;
-
-    if (aadharUrl) {
-      message += `*--- Identification ---*\n`;
-      message += `*Aadhar Card Link:* ${aadharUrl}\n`;
-    }
-    
-    const whatsappUrl = `https://wa.me/917702199889?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    setWhatsappMessage(message);
     setIsSuccess(true);
   };
 
@@ -631,9 +636,32 @@ export default function ServicesContent() {
                   <div className="w-20 h-20 bg-green-100 text-brand-green rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2 className="w-10 h-10" />
                   </div>
-                  <h2 className="text-3xl font-bold text-brand-dark-green mb-4">Request Received!</h2>
-                  <p className="text-gray-500 mb-8 max-w-md mx-auto">Thank you. We will contact you at **{formData.phone}** shortly.</p>
-                  <button onClick={() => setActiveModal(null)} className="bg-brand-dark-green text-white px-10 py-4 rounded-xl font-bold">Done</button>
+                  <h2 className="text-3xl font-bold text-brand-dark-green mb-4">Booking Successful!</h2>
+                  <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
+                    Your payment was successful. Please send your booking details to our official WhatsApp to complete the process.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <button 
+                      onClick={() => {
+                        const url = `https://wa.me/917702199889?text=${encodeURIComponent(whatsappMessage)}`;
+                        window.open(url, "_blank");
+                        router.push("/dashboard");
+                      }} 
+                      className="bg-[#25D366] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#20BE5A] transition-all flex items-center justify-center gap-3 w-full sm:w-auto shadow-lg shadow-green-500/20"
+                    >
+                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.878-.788-1.47-1.761-1.643-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                      </svg>
+                      Send WhatsApp Details
+                    </button>
+                    
+                    <button 
+                      onClick={() => router.push("/dashboard")} 
+                      className="text-gray-500 font-bold hover:text-brand-dark-green hover:bg-gray-100 px-6 py-4 rounded-xl transition-all"
+                    >
+                      Go to Dashboard
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="grid lg:grid-cols-2 gap-10">
@@ -890,9 +918,12 @@ export default function ServicesContent() {
                           <span className="text-sm font-bold text-brand-dark-green">
                             {activeModal === 'LEISURE' ? `${formData.durationHours} Hours` : 
                              (() => {
-                               const start = new Date(formData.date);
-                               const end = new Date(formData.checkOutDate);
-                               const days = (end >= start) ? Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 1;
+                               const startDateTime = new Date(`${formData.date}T${formData.checkInTime}`);
+                               const endDateTime = new Date(`${formData.checkOutDate}T${formData.checkOutTime}`);
+                               let days = 1;
+                               if (endDateTime > startDateTime) {
+                                 days = Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60 * 24));
+                               }
                                return `${days} Day${days > 1 ? 's' : ''}`;
                              })()
                             }
