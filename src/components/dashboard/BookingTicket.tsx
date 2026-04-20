@@ -30,11 +30,6 @@ export function BookingTicket({ booking, onClose }: BookingTicketProps) {
       // Capture using modern-screenshot (supports oklab/oklch)
       const dataUrl = await domToPng(element, {
         scale: 3,
-        features: {
-          // Ensure fonts and images are captured
-          font: true,
-          image: true
-        }
       });
 
       if (downloadSection) (downloadSection as HTMLElement).style.display = 'flex';
