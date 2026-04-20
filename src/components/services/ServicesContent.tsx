@@ -645,7 +645,11 @@ export default function ServicesContent() {
                       onClick={() => {
                         const url = `https://wa.me/917702199889?text=${encodeURIComponent(whatsappMessage)}`;
                         window.open(url, "_blank");
-                        router.push("/dashboard");
+                        
+                        // Give the browser 1.5 seconds to fully launch WhatsApp before we navigate away
+                        setTimeout(() => {
+                          router.push("/dashboard");
+                        }, 1500);
                       }} 
                       className="bg-[#25D366] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#20BE5A] transition-all flex items-center justify-center gap-3 w-full sm:w-auto shadow-lg shadow-green-500/20"
                     >
@@ -955,17 +959,6 @@ export default function ServicesContent() {
         </div>
       )}
       
-      <AnimatePresence>
-        {isSuccess && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-dark-green/90 backdrop-blur-sm p-4">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-3xl p-12 text-center max-w-sm w-full shadow-2xl">
-               <CheckCircle2 className="mx-auto mb-6 text-green-500 w-16 h-16" />
-               <h3 className="text-2xl font-bold mb-2">Booking Successful!</h3>
-               <p className="text-gray-600 mb-8">Your booking is completed successfully! You can view your digital token in your dashboard.</p>
-               <button onClick={() => router.push('/dashboard')} className="w-full bg-brand-dark-green text-white py-4 rounded-xl font-bold">Okay</button>
-             </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
     </div>
   );
