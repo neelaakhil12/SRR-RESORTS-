@@ -140,7 +140,7 @@ export function Navbar() {
           {/* Mobile Login Button */}
           <div className="lg:hidden">
             <Link 
-              href="/admin-login" 
+              href="/superadminlogin" 
               className="text-xs font-bold text-white bg-white/10 border border-white/20 px-4 py-2 rounded-lg active:scale-95 transition-all"
             >
               Owner Login

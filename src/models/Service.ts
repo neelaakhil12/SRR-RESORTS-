@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
 
+// Force Next.js to recompile the model on hot-reload to apply new schema fields
+if (mongoose.models && mongoose.models.Service) {
+  delete mongoose.models.Service;
+}
+
 const ServiceSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     description: { type: String },
     price: { type: Number, required: true },
+    clusterPrice: { type: Number },
     category: { 
       type: String, 
       required: true,

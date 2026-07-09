@@ -15,7 +15,7 @@ export function RootWrapper({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  const isAdminRoute = pathname?.startsWith("/admin") || pathname?.startsWith("/admin-login");
+  const isAdminRoute = pathname?.startsWith("/admin") || pathname?.startsWith("/employeelogin") || pathname?.startsWith("/superadminlogin");
 
   useEffect(() => {
     setMounted(true);

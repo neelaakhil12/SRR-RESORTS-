@@ -8,7 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         '/admin',
         '/api/admin',
-        '/admin-login',
+        '/employeelogin',
+        '/superadminlogin',
         '/checkout',
       ],
     },

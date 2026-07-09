@@ -20,7 +20,8 @@ import {
   Phone as PhoneIcon, 
   Mail as MailIcon,
   ShieldCheck,
-  Info
+  Info,
+  Check
 } from "lucide-react";
 
 declare global {
@@ -124,6 +125,48 @@ export default function ServicesContent() {
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [dbCoupon, setDbCoupon] = useState<any>(null);
+  const [isCouponChecked, setIsCouponChecked] = useState(false);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await fetch("/api/admin/coupons");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const active = data.find((c: any) => c.isActive);
+            setDbCoupon(active || null);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load coupons", err);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
+  useEffect(() => {
+    if (!activeModal) {
+      setIsCouponChecked(false);
+    }
+  }, [activeModal]);
+
+  const getDiscountAmount = (total: number) => {
+    if (!isCouponChecked || !dbCoupon) return 0;
+    if (dbCoupon.discountType === "percentage") {
+      return (total * dbCoupon.discountValue) / 100;
+    }
+    return Math.min(dbCoupon.discountValue, total);
+  };
+
+  const getFinalAmount = () => {
+    const total = calculateTotal();
+    return Math.max(0, total - getDiscountAmount(total));
+  };
+
+
+
   // Form State
   const [formData, setFormData] = useState({
     name: "",
@@ -204,7 +247,7 @@ export default function ServicesContent() {
   }, []);
 
   const calculateTotal = () => {
-    const service = services.find(s => s.id === activeModal);
+    const service = services.find(s => (s as any).category === activeModal || s.id === activeModal);
     const basePrice = service?.price || 0;
 
     let days = 1;
@@ -224,7 +267,8 @@ export default function ServicesContent() {
 
     if (activeModal === 'ROOM') return formData.items.length * (basePrice || 2500) * days;
     if (activeModal === 'HOUSE') {
-      if (formData.houseBookingType === 'cluster') return 8000 * days;
+      const clusterPrice = (service as any)?.clusterPrice || 8000;
+      if (formData.houseBookingType === 'cluster') return clusterPrice * days;
       return formData.items.length * (basePrice || 3000) * days;
     }
     if (activeModal === 'LEISURE') {
@@ -415,7 +459,7 @@ export default function ServicesContent() {
     e.preventDefault();
     const serviceName = services.find(s => s.id === activeModal)?.name || "Service";
     const itemsList = formData.items.length > 0 ? formData.items.join(", ") : "None selected";
-    const totalPrice = calculateTotal();
+    const totalPrice = getFinalAmount();
 
     setIsProcessing(true);
     
@@ -808,7 +852,7 @@ export default function ServicesContent() {
                     {activeModal === 'LEISURE' && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
-                          {['Swimming Pool', 'Box Cricket'].map(act => (
+                          {['Box Cricket'].map(act => (
                             <button key={act} type="button" onClick={() => toggleItem(act)} className={`py-3 px-4 text-xs font-bold rounded-xl border transition-all ${formData.items.includes(act) ? 'bg-brand-dark-green text-white' : 'bg-white text-brand-dark-green border-gray-100'}`}>{act}</button>
                           ))}
                         </div>
@@ -910,6 +954,25 @@ export default function ServicesContent() {
                         </div>
                       </div>
                     )}
+                    {/* Coupon / Promo Code Option */}
+                    {!formData.isStayer && calculateTotal() > 0 && dbCoupon && (
+                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={isCouponChecked} 
+                            onChange={(e) => setIsCouponChecked(e.target.checked)}
+                            className="rounded text-brand-dark-green focus:ring-brand-gold w-5 h-5 accent-brand-dark-green"
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-brand-dark-green">Apply Offer Coupon / Discount</p>
+                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider mt-0.5">
+                              {dbCoupon.code} (Get {dbCoupon.discountType === 'percentage' ? `${dbCoupon.discountValue}%` : `₹${dbCoupon.discountValue}`} off)
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
 
 
                     <div className="p-6 bg-brand-dark-green/5 rounded-2xl border border-brand-dark-green/10 space-y-2">
@@ -933,10 +996,24 @@ export default function ServicesContent() {
                             }
                           </span>
                        </div>
-                       {activeModal !== 'LEISURE' && (
-                         <div className="pt-2 border-t border-brand-dark-green/10 flex justify-between items-center">
-                            <span className="text-base font-black text-brand-dark-green">Total Amount</span>
-                            <span className="text-xl font-black text-brand-sunset-start">₹{calculateTotal().toLocaleString()}</span>
+                       {calculateTotal() > 0 && (
+                         <div className="pt-2 border-t border-brand-dark-green/10 flex flex-col gap-1.5">
+                           <div className="flex justify-between items-center text-sm font-medium text-gray-500">
+                             <span>Base Amount</span>
+                             <span className={isCouponChecked && dbCoupon ? "line-through text-gray-400 font-bold" : "text-gray-700 font-bold"}>₹{calculateTotal().toLocaleString()}</span>
+                           </div>
+                           
+                           {isCouponChecked && dbCoupon && (
+                             <div className="flex justify-between items-center text-xs font-bold text-green-600 bg-green-500/5 px-3 py-1 rounded-lg">
+                               <span>Discount ({dbCoupon.code})</span>
+                               <span>-₹{getDiscountAmount(calculateTotal()).toLocaleString()}</span>
+                             </div>
+                           )}
+
+                           <div className="pt-2 flex justify-between items-center border-t border-dashed border-brand-dark-green/15">
+                             <span className="text-base font-black text-brand-dark-green">Total Amount</span>
+                             <span className="text-xl font-black text-brand-sunset-start">₹{getFinalAmount().toLocaleString()}</span>
+                           </div>
                          </div>
                        )}
                     </div>
@@ -947,7 +1024,7 @@ export default function ServicesContent() {
                       disabled={hasCollision() || isProcessing || (formData.items.length === 0 && activeModal !== 'HALL')} 
                       className={`w-full py-4 rounded-2xl font-bold text-lg shadow-xl shadow-brand-sunset-start/20 ${hasCollision() || isProcessing || (formData.items.length === 0 && activeModal !== 'HALL') ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-sunset-gradient text-white hover:opacity-90 transition-opacity'}`}
                     >
-                      {isProcessing ? 'Processing...' : (hasCollision() ? 'Slot Unavailable' : (calculateTotal() > 0 && !formData.isStayer && activeModal !== 'LEISURE' ? `Pay ₹${calculateTotal().toLocaleString()}` : 'Confirm Booking'))}
+                      {isProcessing ? 'Processing...' : (hasCollision() ? 'Slot Unavailable' : (calculateTotal() > 0 && !formData.isStayer ? `Pay ₹${getFinalAmount().toLocaleString()}` : 'Confirm Booking'))}
                     </button>
 
 

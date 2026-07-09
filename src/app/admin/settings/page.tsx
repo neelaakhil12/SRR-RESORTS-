@@ -9,7 +9,11 @@ import {
   Type, 
   Layout, 
   Check,
-  Upload
+  Upload,
+  Users,
+  UserPlus,
+  Trash2,
+  Key
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
@@ -37,9 +41,94 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Assistant Admin state
+  const [assistants, setAssistants] = useState<any[]>([]);
+  const [assistantsLoading, setAssistantsLoading] = useState(true);
+  const [newAssistant, setNewAssistant] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [submittingAssistant, setSubmittingAssistant] = useState(false);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [assistantSuccess, setAssistantSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     fetchSettings();
+    fetchAssistants();
   }, []);
+
+  const fetchAssistants = async () => {
+    try {
+      const res = await fetch("/api/admin/assistants");
+      if (res.ok) {
+        const data = await res.json();
+        setAssistants(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch assistant admins", err);
+    } finally {
+      setAssistantsLoading(false);
+    }
+  };
+
+  const handleCreateAssistant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAssistantError(null);
+    setAssistantSuccess(null);
+
+    const { name, email, password, confirmPassword } = newAssistant;
+    if (!name || !email || !password || !confirmPassword) {
+      setAssistantError("All fields are required.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setAssistantError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setAssistantError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setSubmittingAssistant(true);
+    try {
+      const res = await fetch("/api/admin/assistants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAssistantSuccess("Assistant admin account created successfully!");
+        setNewAssistant({ name: "", email: "", password: "", confirmPassword: "" });
+        fetchAssistants();
+      } else {
+        setAssistantError(data.error || "Failed to create assistant admin.");
+      }
+    } catch (err) {
+      setAssistantError("An error occurred. Please try again.");
+    } finally {
+      setSubmittingAssistant(false);
+    }
+  };
+
+  const handleDeleteAssistant = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete the assistant admin account for ${name}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/assistants?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        alert("Account deleted successfully.");
+        fetchAssistants();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete account.");
+      }
+    } catch (err) {
+      alert("An error occurred while deleting the account.");
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -253,10 +342,141 @@ export default function AdminSettings() {
 
 
 
-            {/* Other Settings Placeholder */}
-            <div className="bg-gray-100/50 border border-dashed border-gray-200 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-gray-400">
-               <Settings className="w-10 h-10 mb-2 opacity-20" />
-               <p className="font-bold">More settings (Footer, Social Links) coming soon...</p>
+            {/* Assistant Admins Management Card */}
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-10">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-brand-gold/10 rounded-2xl text-brand-gold">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-[#0b1a10]">Assistant Admin Accounts</h2>
+                  <p className="text-sm text-gray-400">Manage accounts that have restricted access to bookings only.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {/* Form to Create */}
+                <div>
+                  <h3 className="text-lg font-bold text-[#0b1a10] mb-6 flex items-center gap-2">
+                    <UserPlus className="w-5 h-5 text-brand-gold" /> Create Credentials
+                  </h3>
+                  
+                  {assistantError && (
+                    <div className="mb-4 p-4 rounded-xl text-xs font-bold bg-red-50 text-red-500 border border-red-100 animate-in fade-in duration-300">
+                      {assistantError}
+                    </div>
+                  )}
+                  {assistantSuccess && (
+                    <div className="mb-4 p-4 rounded-xl text-xs font-bold bg-green-50 text-green-600 border border-green-100 animate-in fade-in duration-300">
+                      {assistantSuccess}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleCreateAssistant} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Name</label>
+                      <input 
+                        required
+                        type="text"
+                        placeholder="e.g. John Doe"
+                        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold text-sm"
+                        value={newAssistant.name}
+                        onChange={e => setNewAssistant({...newAssistant, name: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Email Address</label>
+                      <input 
+                        required
+                        type="email"
+                        placeholder="e.g. assistant@srrresorts.com"
+                        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold text-sm"
+                        value={newAssistant.email}
+                        onChange={e => setNewAssistant({...newAssistant, email: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Password</label>
+                        <input 
+                          required
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold text-sm"
+                          value={newAssistant.password}
+                          onChange={e => setNewAssistant({...newAssistant, password: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Confirm Password</label>
+                        <input 
+                          required
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold text-sm"
+                          value={newAssistant.confirmPassword}
+                          onChange={e => setNewAssistant({...newAssistant, confirmPassword: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingAssistant}
+                      className="w-full bg-[#0b1a10] hover:bg-[#152e1d] text-white p-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-2 shadow-lg shadow-black/10"
+                    >
+                      {submittingAssistant ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-brand-gold" />
+                      ) : (
+                        <>
+                          <Key className="w-4 h-4 text-brand-gold" /> Create Account
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+
+                {/* List of active assistant admins */}
+                <div className="flex flex-col h-full border-t md:border-t-0 md:border-l border-gray-100 md:pl-10 pt-10 md:pt-0">
+                  <h3 className="text-lg font-bold text-[#0b1a10] mb-6 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-brand-gold" /> Active Accounts
+                  </h3>
+
+                  {assistantsLoading ? (
+                    <div className="flex items-center justify-center py-10 flex-1">
+                      <Loader2 className="w-6 h-6 animate-spin text-brand-gold" />
+                    </div>
+                  ) : assistants.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 border border-dashed border-gray-100 rounded-2xl p-6 flex-1">
+                      <p className="font-bold text-sm">No assistant accounts</p>
+                      <p className="text-xs mt-1 text-center">Use the form to create new login credentials.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 flex-1">
+                      {assistants.map((ast) => (
+                        <div 
+                          key={ast._id} 
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-brand-gold/20 transition-all"
+                        >
+                          <div>
+                            <p className="font-bold text-[#0b1a10] text-sm">{ast.name}</p>
+                            <p className="text-xs text-gray-400 font-medium">{ast.email}</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteAssistant(ast._id, ast.name)}
+                            className="p-3 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            title="Delete Account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

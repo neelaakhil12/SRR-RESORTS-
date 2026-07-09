@@ -25,6 +25,7 @@ interface Service {
   name: string;
   description: string;
   price: number;
+  clusterPrice?: number;
   category: string;
   image_url: string;
   count_info: string;
@@ -53,6 +54,7 @@ const DEFAULT_SERVICES = [
     name: "Independent Houses",
     description: "Book one of our 6 exclusive independent houses. Set in nature, Cluster A (Houses 1-3) features a private bonfire, and Cluster B (Houses 4-6) features a premium foot pool.",
     price: 3000,
+    clusterPrice: 8000,
     category: "HOUSE",
     image_url: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1000&auto=format&fit=crop",
     count_info: "6 units",
@@ -116,9 +118,19 @@ export default function ServicesManagement() {
   const [currentPoints, setCurrentPoints] = useState<string[]>([]);
   const [newPoint, setNewPoint] = useState("");
 
+  const [selectedCategory, setSelectedCategory] = useState("ROOM");
+
   useEffect(() => {
     fetchServices();
   }, []);
+
+  useEffect(() => {
+    if (editingService) {
+      setSelectedCategory(editingService.category || "ROOM");
+    } else {
+      setSelectedCategory("ROOM");
+    }
+  }, [editingService, isModalOpen]);
 
   const fetchServices = async () => {
     try {
@@ -205,8 +217,13 @@ export default function ServicesManagement() {
     // Add points to body
     (body as any).points = currentPoints;
 
-    // Convert price to number
+    // Convert price and clusterPrice to number
     (body as any).price = Number(body.price);
+    if (selectedCategory === "HOUSE" && body.clusterPrice) {
+      (body as any).clusterPrice = Number(body.clusterPrice);
+    } else {
+      (body as any).clusterPrice = undefined;
+    }
 
     try {
       const method = editingService?.id ? "PUT" : "POST";
@@ -409,7 +426,12 @@ export default function ServicesManagement() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b1a10]/40 px-1">Main Category</label>
-                        <select name="category" defaultValue={editingService?.category || 'ROOM'} className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold appearance-none">
+                        <select 
+                          name="category" 
+                          value={selectedCategory} 
+                          onChange={(e) => setSelectedCategory(e.target.value)} 
+                          className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold appearance-none"
+                        >
                           <option value="ROOM">Luxury Room</option>
                           <option value="HOUSE">Independent House</option>
                           <option value="HALL">Convention Hall</option>
@@ -418,11 +440,21 @@ export default function ServicesManagement() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className={`grid ${selectedCategory === 'HOUSE' ? 'grid-cols-3' : 'grid-cols-2'} gap-6`}>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b1a10]/40 px-1">Base Price (₹)</label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b1a10]/40 px-1">
+                          {selectedCategory === 'HOUSE' ? 'Price (Single House) (₹)' : 'Base Price (₹)'}
+                        </label>
                         <input name="price" type="number" defaultValue={editingService?.price} required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-black text-brand-green" placeholder="0.00" />
                       </div>
+                      
+                      {selectedCategory === 'HOUSE' && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b1a10]/40 px-1">Price (Full Cluster) (₹)</label>
+                          <input name="clusterPrice" type="number" defaultValue={editingService?.clusterPrice || 8000} required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-black text-brand-green" placeholder="8000" />
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b1a10]/40 px-1">Inventory / Capacity Info</label>
                         <input name="count_info" defaultValue={editingService?.count_info} required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold placeholder:text-gray-300" placeholder="e.g. 12 units" />

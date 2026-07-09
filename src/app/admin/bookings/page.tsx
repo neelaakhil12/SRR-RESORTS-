@@ -27,7 +27,8 @@ import {
   Waves,
   ShieldCheck,
   Upload,
-  Info
+  Info,
+  Trash2
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { format } from "date-fns";
@@ -77,6 +78,7 @@ interface Booking {
 export default function BookingsManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState<"selection" | "form">("selection");
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -88,6 +90,23 @@ export default function BookingsManagement() {
   const [selectedAadharUrl, setSelectedAadharUrl] = useState<string | null>(null);
   const aadharInputRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().split('T')[0];
+
+  const [services, setServices] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await fetch("/api/admin/services");
+        if (res.ok) {
+          const data = await res.json();
+          setServices(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load services", err);
+      }
+    };
+    fetchServices();
+  }, []);
 
 
 
@@ -117,9 +136,23 @@ export default function BookingsManagement() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
 
+
   useEffect(() => {
     fetchBookings();
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/admin/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setRole(data.role);
+      }
+    } catch (err) {
+      console.error("Failed to fetch admin profile", err);
+    }
+  };
 
   const safeFormatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
@@ -157,6 +190,24 @@ export default function BookingsManagement() {
     }
   };
 
+  const deleteBooking = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this booking? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/bookings?id=${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        fetchBookings();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete booking.");
+      }
+    } catch (err) {
+      console.error("Delete error", err);
+      alert("An error occurred while deleting the booking.");
+    }
+  };
+
   const checkAvailability = async () => {
     if (!formData.date || !selectedService) return;
     setCheckingAvailability(true);
@@ -183,9 +234,12 @@ export default function BookingsManagement() {
   }, [formData.date, formData.checkOutDate, formData.checkInTime, formData.checkOutTime, selectedService, modalStep]);
 
   const calculateTotal = () => {
-    const basePrice = selectedService?.id === 'ROOM' ? 2500 : 
+    const liveService = services.find(s => s.category === selectedService?.id);
+    const basePrice = liveService?.price || (
+                      selectedService?.id === 'ROOM' ? 2500 : 
                       selectedService?.id === 'HOUSE' ? 3000 : 
-                      selectedService?.id === 'LEISURE' ? 350 : 0;
+                      selectedService?.id === 'LEISURE' ? 350 : 0
+                    );
 
     let days = 1;
     if (formData.date && formData.checkOutDate && (selectedService?.id === 'ROOM' || selectedService?.id === 'HOUSE')) {
@@ -205,7 +259,8 @@ export default function BookingsManagement() {
 
     if (selectedService?.id === 'ROOM') return formData.items.length * basePrice * days;
     if (selectedService?.id === 'HOUSE') {
-      if (formData.houseBookingType === 'cluster') return 8000 * days;
+      const clusterPrice = liveService?.clusterPrice || 8000;
+      if (formData.houseBookingType === 'cluster') return clusterPrice * days;
       return formData.items.length * basePrice * days;
     }
     if (selectedService?.id === 'LEISURE') {
@@ -391,6 +446,384 @@ export default function BookingsManagement() {
     }
   };
 
+  const renderManualBookingBody = (hideCloseButton = false) => {
+    return (
+      <div className="relative bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-100/50">
+         <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
+          <div>
+            <h2 className="text-2xl font-bold text-[#0b1a10]">
+              {modalStep === 'selection' ? 'Select Service' : `New ${selectedService?.name} Booking`}
+            </h2>
+            <p className="text-xs text-gray-400 font-medium">
+              {modalStep === 'selection' ? 'Choose the type of reservation you want to record.' : 'Enter the reservation details carefully.'}
+            </p>
+          </div>
+          {!hideCloseButton && (
+            <button onClick={() => {
+              setIsModalOpen(false);
+              setModalStep("selection");
+              setSelectedService(null);
+            }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <X className="w-6 h-6 text-gray-400" />
+            </button>
+          )}
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-8">
+          {modalStep === 'selection' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {SERVICE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    setSelectedService(opt);
+                    setModalStep("form");
+                    setFormData({
+                      ...formData,
+                      items: [],
+                      total_amount: opt.id === 'LEISURE' ? 0 : (opt.id === 'HALL' ? 0 : (opt.id === 'ROOM' ? 2500 : 3000))
+                    });
+                  }}
+                  className="group p-6 rounded-3xl border border-gray-100 hover:border-brand-gold hover:shadow-xl hover:shadow-brand-gold/10 transition-all text-left flex items-center gap-6 bg-white"
+                >
+                  <div className={`w-14 h-14 rounded-2xl ${opt.bg} flex items-center justify-center shrink-0`}>
+                    <opt.icon className={`w-6 h-6 ${opt.color}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#0b1a10] group-hover:text-brand-gold transition-colors">{opt.name}</h3>
+                    <p className="text-xs text-gray-400">Record a {opt.name.toLowerCase()} reservation</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <form onSubmit={handleManualBooking} className="space-y-8">
+              {/* Common Fields: Guest Info */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input 
+                      required
+                      type="text" 
+                      className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
+                      placeholder="Guest Name" 
+                      value={formData.name} 
+                      onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Phone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input 
+                      required
+                      type="tel" 
+                      className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
+                      placeholder="+91 ..." 
+                      value={formData.phone} 
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input 
+                      type="email" 
+                      className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
+                      placeholder="guest@example.com" 
+                      value={formData.email} 
+                      onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 block">Aadhar Document (Required for Stays)</label>
+                <div 
+                  onClick={() => aadharInputRef.current?.click()} 
+                  className="border-2 border-dashed border-gray-100 rounded-3xl p-8 text-center cursor-pointer hover:bg-gray-50 hover:border-brand-gold/30 transition-all group"
+                >
+                  <input 
+                    type="file" 
+                    ref={aadharInputRef} 
+                    className="hidden" 
+                    accept="image/*,.pdf" 
+                    onChange={(e) => setFormData({...formData, aadharFile: e.target.files?.[0] || null})} 
+                  />
+                  <Upload className="mx-auto mb-3 text-gray-300 group-hover:text-brand-gold transition-colors" size={32} />
+                  <p className="text-sm font-black text-gray-800">
+                    {formData.aadharFile ? (formData.aadharFile as any).name : 'Click to Upload Aadhar Card'}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Image or PDF (Max 5MB)</p>
+                </div>
+              </div>
+
+              {/* Service Specific Fields */}
+              {selectedService?.id === 'ROOM' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-in Date & Time</label>
+                      <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                      <div className="flex gap-2">
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).hour} onChange={(e) => handleTimeChange("checkInTime", "hour", e.target.value)}>
+                          {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).minute} onChange={(e) => handleTimeChange("checkInTime", "minute", e.target.value)}>
+                          {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).period} onChange={(e) => handleTimeChange("checkInTime", "period", e.target.value)}>
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-out Date & Time</label>
+                      <input type="date" min={formData.date} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.checkOutDate} onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})} />
+                      <div className="flex gap-2">
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).hour} onChange={(e) => handleTimeChange("checkOutTime", "hour", e.target.value)}>
+                          {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).minute} onChange={(e) => handleTimeChange("checkOutTime", "minute", e.target.value)}>
+                          {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).period} onChange={(e) => handleTimeChange("checkOutTime", "period", e.target.value)}>
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Select Rooms</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {FLOORS.map(f => (
+                        <div key={f.name} className="space-y-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.name}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {f.rooms.map(r => {
+                              const booked = isItemBooked(r);
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  disabled={booked}
+                                  onClick={() => toggleItem(r)}
+                                  className={`p-2 text-xs font-bold border rounded-lg transition-all ${
+                                    booked ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
+                                    formData.items.includes(r) ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white hover:border-brand-gold'
+                                  }`}
+                                >
+                                  {r} {booked && '(Booked)'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedService?.id === 'HOUSE' && (
+                 <div className="space-y-6">
+                    <div className="flex gap-2 p-1.5 bg-gray-50 rounded-2xl w-fit border border-gray-100">
+                      <button type="button" onClick={() => setFormData({...formData, houseBookingType: 'individual', items: []})} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${formData.houseBookingType === 'individual' ? 'bg-white shadow-sm text-brand-dark-green' : 'text-gray-400'}`}>Individual</button>
+                      <button type="button" onClick={() => setFormData({...formData, houseBookingType: 'cluster', items: []})} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${formData.houseBookingType === 'cluster' ? 'bg-brand-gold text-white shadow-md' : 'text-gray-400'}`}>Full Cluster</button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-in Date & Time</label>
+                        <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                        <div className="flex gap-2">
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).hour} onChange={(e) => handleTimeChange("checkInTime", "hour", e.target.value)}>
+                            {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).minute} onChange={(e) => handleTimeChange("checkInTime", "minute", e.target.value)}>
+                            {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).period} onChange={(e) => handleTimeChange("checkInTime", "period", e.target.value)}>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-out Date & Time</label>
+                        <input type="date" min={formData.date} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.checkOutDate} onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})} />
+                        <div className="flex gap-2">
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).hour} onChange={(e) => handleTimeChange("checkOutTime", "hour", e.target.value)}>
+                            {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).minute} onChange={(e) => handleTimeChange("checkOutTime", "minute", e.target.value)}>
+                            {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).period} onChange={(e) => handleTimeChange("checkOutTime", "period", e.target.value)}>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {formData.houseBookingType === 'individual' ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {HOUSE_CLUSTERS.map(c => (
+                          <div key={c.name} className="space-y-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{c.name.split(' ')[0]} {c.name.split(' ')[1]}</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {c.houses.map(h => {
+                                const booked = isItemBooked(h);
+                                return (
+                                  <button
+                                    key={h}
+                                    type="button"
+                                    disabled={booked}
+                                    onClick={() => toggleItem(h)}
+                                    className={`p-2 text-xs font-bold border rounded-lg transition-all ${
+                                      booked ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
+                                      formData.items.includes(h) ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white hover:border-brand-gold'
+                                    }`}
+                                  >
+                                    {h.split(' ')[1]}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                         {HOUSE_CLUSTERS.map(c => {
+                           const booked = c.houses.some(h => isItemBooked(h));
+                           return (
+                             <button 
+                                key={c.name}
+                                type="button"
+                                disabled={booked}
+                                onClick={() => setFormData({...formData, items: [c.name]})}
+                                className={`p-6 text-center border-2 rounded-2xl transition-all ${
+                                  booked ? 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed' :
+                                  formData.items.includes(c.name) ? 'bg-brand-gold border-brand-gold text-white shadow-lg' : 'bg-white border-gray-100 hover:border-brand-gold'
+                                }`}
+                             >
+                                <p className="font-bold">{c.name.split(' (')[0]}</p>
+                                <p className="text-[10px] opacity-70">Full Cluster Access</p>
+                             </button>
+                           );
+                         })}
+                      </div>
+                    )}
+                 </div>
+              )}
+
+              {selectedService?.id === 'LEISURE' && (
+                 <div className="space-y-6">
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Date</label>
+                        <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Time Slot</label>
+                        <select className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})}>
+                          {Array.from({length: 12}, (_, i) => 9 + i).map(h => {
+                            const label = `${h > 12 ? h-12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
+                            return <option key={h} value={label}>{label}</option>;
+                          })}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Activities</label>
+                      <div className="grid grid-cols-2 gap-3">
+                         {['Box Cricket'].map(act => (
+                           <button key={act} type="button" onClick={() => toggleItem(act)} className={`py-4 rounded-2xl border font-bold transition-all ${formData.items.includes(act) ? 'bg-brand-gold text-white border-brand-gold shadow-lg shadow-brand-gold/20' : 'bg-white border-gray-100 hover:border-brand-gold'}`}>{act}</button>
+                         ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Duration (Hours)</label>
+                      <input type="number" min="1" max="12" className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.durationHours} onChange={(e) => setFormData({...formData, durationHours: parseInt(e.target.value) || 1})} />
+                    </div>
+                 </div>
+              )}
+
+              {selectedService?.id === 'HALL' && (
+                 <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Event Date</label>
+                      <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Event Details / Notes</label>
+                      <textarea rows={3} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold" placeholder="Wedding/Conference details..." value={formData.tokenId} onChange={(e) => setFormData({...formData, tokenId: e.target.value})} />
+                    </div>
+                 </div>
+              )}
+
+              {/* Guest Count and Payment Method */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Total Guests</label>
+                  <input type="number" min="1" className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.guests} onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Payment Method</label>
+                  <div className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl font-bold text-[#0b1a10]">
+                    Cash
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary and Submit */}
+              <div className="p-6 bg-[#0b1a10]/5 rounded-3xl border border-[#0b1a10]/10 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#0b1a10]/40">Total Amount to Collect</p>
+                  <p className="text-3xl font-black text-brand-sunset-start">₹{selectedService?.id === 'HALL' ? (
+                    <input type="number" className="bg-transparent border-b border-brand-sunset-start outline-none w-32" value={formData.total_amount} onChange={(e) => setFormData({...formData, total_amount: parseInt(e.target.value) || 0})} />
+                  ) : calculateTotal().toLocaleString()}</p>
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setModalStep("selection");
+                      setSelectedService(null);
+                    }}
+                    className="flex-1 px-8 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    disabled={formLoading || (formData.items.length === 0 && selectedService?.id !== 'HALL')}
+                    className="flex-[2] bg-brand-sunset-start text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-brand-sunset-start/20 disabled:opacity-50"
+                  >
+                    {formLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 text-white" /> Confirm Booking
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const filteredBookings = bookings.filter(b => {
     const matchesStatus = filterStatus === "ALL" || b.status === filterStatus;
     const matchesSearch = (b.id.toLowerCase().includes(searchTerm.toLowerCase())) || 
@@ -403,513 +836,152 @@ export default function BookingsManagement() {
       <AdminSidebar />
 
       <main className="flex-1 p-10 overflow-y-auto">
-        <header className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-4xl font-black text-[#0b1a10]">Bookings</h1>
-            <p className="text-gray-400 font-medium mt-2">Oversee all reservations and manage walk-in customers.</p>
-          </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-[#0b1a10] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10"
-          >
-            <Plus className="w-5 h-5 text-brand-gold" /> Manual Booking
-          </button>
-        </header>
-
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search by ID or Guest Name..."
-              className="w-full bg-white border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-medium"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            {['ALL', 'CONFIRMED', 'PENDING', 'CANCELLED'].map((s) => (
+        <>
+          <header className="flex justify-between items-center mb-10">
+              <div>
+                <h1 className="text-4xl font-black text-[#0b1a10]">Bookings</h1>
+                <p className="text-gray-400 font-medium mt-2">Oversee all reservations and manage walk-in customers.</p>
+              </div>
               <button 
-                key={s}
-                onClick={() => setFilterStatus(s)}
-                className={`px-6 py-4 rounded-2xl font-bold text-xs transition-all ${
-                  filterStatus === s 
-                    ? "bg-brand-gold text-[#0b1a10] shadow-lg shadow-brand-gold/20" 
-                    : "bg-white text-gray-400 border border-gray-100 hover:bg-gray-50"
-                }`}
+                onClick={() => {
+                  setModalStep("selection");
+                  setSelectedService(null);
+                  setIsModalOpen(true);
+                }}
+                className="bg-[#0b1a10] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10"
               >
-                {s}
+                <Plus className="w-5 h-5 text-brand-gold" /> Manual Booking
               </button>
-            ))}
-          </div>
-        </div>
+            </header>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-brand-gold" />
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-50">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Guest</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Stay Duration</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Amount</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">ID proof</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredBookings.map((bkg) => (
-                  <tr key={bkg.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-srr-cream flex items-center justify-center text-[#0b1a10] font-bold text-xs">
-                          {bkg.name?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#0b1a10]">{bkg.name || 'Unknown'}</p>
-                          <p className="text-xs text-xs text-gray-400">{bkg.service_type} • {bkg.items.join(', ')}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm font-bold text-[#0b1a10]">{safeFormatDate(bkg.start_date)}</p>
-                      <p className="text-xs text-gray-400">{bkg.booking_source}</p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="font-black text-[#0b1a10]">₹{bkg.total_amount}</p>
-                      <span className={`text-[9px] font-black uppercase tracking-widest ${bkg.payment_status === 'PAID' ? 'text-green-500' : 'text-orange-400'}`}>
-                        {bkg.payment_status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        bkg.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 
-                        bkg.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {bkg.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      {bkg.aadhar_url ? (
-                        <button 
-                          onClick={() => setSelectedAadharUrl(bkg.aadhar_url || null)}
-                          className="text-xs font-black text-brand-gold hover:text-brand-dark-green flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold/5 rounded-lg border border-brand-gold/10 transition-all"
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" /> View Aadhar
-                        </button>
-                      ) : (
-                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded">N/A</span>
-                      )}
-                    </td>
-
-                    <td className="px-8 py-6">
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                         {bkg.status !== 'CONFIRMED' && (
-                           <button onClick={() => updateBookingStatus(bkg.id, 'CONFIRMED', 'PAID')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100">
-                             <Check className="w-4 h-4" />
-                           </button>
-                         )}
-                         {bkg.status !== 'CANCELLED' && (
-                           <button onClick={() => updateBookingStatus(bkg.id, 'CANCELLED')} className="p-2 bg-red-50 text-red-400 rounded-lg hover:bg-red-100">
-                             <X className="w-4 h-4" />
-                           </button>
-                         )}
-                      </div>
-                    </td>
-                  </tr>
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search by ID or Guest Name..."
+                  className="w-full bg-white border border-gray-100 pl-12 pr-4 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-medium"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                {['ALL', 'CONFIRMED', 'PENDING', 'CANCELLED'].map((s) => (
+                  <button 
+                    key={s}
+                    onClick={() => setFilterStatus(s)}
+                    className={`px-6 py-4 rounded-2xl font-bold text-xs transition-all ${
+                      filterStatus === s 
+                        ? "bg-brand-gold text-[#0b1a10] shadow-lg shadow-brand-gold/20" 
+                        : "bg-white text-gray-400 border border-gray-100 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s}
+                  </button>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              </div>
+            </div>
 
-        {/* Manual Booking Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#0b1a10]/60 backdrop-blur-sm" onClick={() => {
-              setIsModalOpen(false);
-              setModalStep("selection");
-              setSelectedService(null);
-            }} />
-            <div className="relative bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-               <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#0b1a10]">
-                    {modalStep === 'selection' ? 'Select Service' : `New ${selectedService?.name} Booking`}
-                  </h2>
-                  <p className="text-xs text-gray-400 font-medium">
-                    {modalStep === 'selection' ? 'Choose the type of reservation you want to record.' : 'Enter the reservation details carefully.'}
-                  </p>
-                </div>
-                <button onClick={() => {
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-brand-gold" />
+              </div>
+            ) : (
+              <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-50">
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Guest</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Stay Duration</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Amount</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">ID proof</th>
+                      <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredBookings.map((bkg) => (
+                      <tr key={bkg.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-srr-cream flex items-center justify-center text-[#0b1a10] font-bold text-xs">
+                              {bkg.name?.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                              <p className="font-bold text-[#0b1a10]">{bkg.name || 'Unknown'}</p>
+                              <p className="text-xs text-xs text-gray-400">{bkg.service_type} • {bkg.items.join(', ')}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <p className="text-sm font-bold text-[#0b1a10]">{safeFormatDate(bkg.start_date)}</p>
+                          <p className="text-xs text-gray-400">{bkg.booking_source}</p>
+                        </td>
+                        <td className="px-8 py-6">
+                          <p className="font-black text-[#0b1a10]">₹{bkg.total_amount}</p>
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${bkg.payment_status === 'PAID' ? 'text-green-500' : 'text-orange-400'}`}>
+                            {bkg.payment_status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            bkg.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 
+                            bkg.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {bkg.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6">
+                          {bkg.aadhar_url ? (
+                            <button 
+                              onClick={() => setSelectedAadharUrl(bkg.aadhar_url || null)}
+                              className="text-xs font-black text-brand-gold hover:text-brand-dark-green flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold/5 rounded-lg border border-brand-gold/10 transition-all"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" /> View Aadhar
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded">N/A</span>
+                          )}
+                        </td>
+
+                        <td className="px-8 py-6">
+                          <div className="flex gap-2">
+                             {bkg.status !== 'CONFIRMED' && (
+                               <button onClick={() => updateBookingStatus(bkg.id, 'CONFIRMED', 'PAID')} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100" title="Confirm Booking">
+                                 <Check className="w-4 h-4" />
+                               </button>
+                             )}
+                             {bkg.status !== 'CANCELLED' && (
+                               <button onClick={() => updateBookingStatus(bkg.id, 'CANCELLED')} className="p-2 bg-red-50 text-red-400 rounded-lg hover:bg-red-100" title="Cancel Booking">
+                                 <X className="w-4 h-4" />
+                               </button>
+                             )}
+                             <button onClick={() => deleteBooking(bkg.id)} className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100" title="Delete Booking">
+                               <Trash2 className="w-4 h-4" />
+                             </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Manual Booking Modal */}
+            {isModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[#0b1a10]/60 backdrop-blur-sm" onClick={() => {
                   setIsModalOpen(false);
                   setModalStep("selection");
                   setSelectedService(null);
-                }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <X className="w-6 h-6 text-gray-400" />
-                </button>
+                }} />
+                {renderManualBookingBody(false)}
               </div>
-
-              <div className="overflow-y-auto flex-1 p-8">
-                {modalStep === 'selection' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {SERVICE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => {
-                          setSelectedService(opt);
-                          setModalStep("form");
-                          setFormData({
-                            ...formData,
-                            items: [],
-                            total_amount: opt.id === 'LEISURE' ? 0 : (opt.id === 'HALL' ? 0 : (opt.id === 'ROOM' ? 2500 : 3000))
-                          });
-                        }}
-                        className="group p-6 rounded-3xl border border-gray-100 hover:border-brand-gold hover:shadow-xl hover:shadow-brand-gold/10 transition-all text-left flex items-center gap-6 bg-white"
-                      >
-                        <div className={`w-14 h-14 rounded-2xl ${opt.bg} flex items-center justify-center shrink-0`}>
-                          <opt.icon className={`w-6 h-6 ${opt.color}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-[#0b1a10] group-hover:text-brand-gold transition-colors">{opt.name}</h3>
-                          <p className="text-xs text-gray-400">Record a {opt.name.toLowerCase()} reservation</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <form onSubmit={handleManualBooking} className="space-y-8">
-                    {/* Common Fields: Guest Info */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Name</label>
-                        <div className="relative">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input 
-                            required
-                            type="text" 
-                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
-                            placeholder="Guest Name" 
-                            value={formData.name} 
-                            onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Phone</label>
-                        <div className="relative">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input 
-                            required
-                            type="tel" 
-                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
-                            placeholder="+91 ..." 
-                            value={formData.phone} 
-                            onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Guest Email</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input 
-                            type="email" 
-                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-sm" 
-                            placeholder="guest@example.com" 
-                            value={formData.email} 
-                            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 pt-4">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 block">Aadhar Document (Required for Stays)</label>
-                      <div 
-                        onClick={() => aadharInputRef.current?.click()} 
-                        className="border-2 border-dashed border-gray-100 rounded-3xl p-8 text-center cursor-pointer hover:bg-gray-50 hover:border-brand-gold/30 transition-all group"
-                      >
-                        <input 
-                          type="file" 
-                          ref={aadharInputRef} 
-                          className="hidden" 
-                          accept="image/*,.pdf" 
-                          onChange={(e) => setFormData({...formData, aadharFile: e.target.files?.[0] || null})} 
-                        />
-                        <Upload className="mx-auto mb-3 text-gray-300 group-hover:text-brand-gold transition-colors" size={32} />
-                        <p className="text-sm font-black text-gray-800">
-                          {formData.aadharFile ? (formData.aadharFile as any).name : 'Click to Upload Aadhar Card'}
-                        </p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Image or PDF (Max 5MB)</p>
-                      </div>
-                    </div>
-
-                    {/* Service Specific Fields */}
-                    {selectedService?.id === 'ROOM' && (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-in Date & Time</label>
-                            <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-                            <div className="flex gap-2">
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).hour} onChange={(e) => handleTimeChange("checkInTime", "hour", e.target.value)}>
-                                {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
-                              </select>
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).minute} onChange={(e) => handleTimeChange("checkInTime", "minute", e.target.value)}>
-                                {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
-                              </select>
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).period} onChange={(e) => handleTimeChange("checkInTime", "period", e.target.value)}>
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-out Date & Time</label>
-                            <input type="date" min={formData.date} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.checkOutDate} onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})} />
-                            <div className="flex gap-2">
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).hour} onChange={(e) => handleTimeChange("checkOutTime", "hour", e.target.value)}>
-                                {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
-                              </select>
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).minute} onChange={(e) => handleTimeChange("checkOutTime", "minute", e.target.value)}>
-                                {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
-                              </select>
-                              <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).period} onChange={(e) => handleTimeChange("checkOutTime", "period", e.target.value)}>
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Select Rooms</label>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {FLOORS.map(f => (
-                              <div key={f.name} className="space-y-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.name}</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {f.rooms.map(r => {
-                                    const booked = isItemBooked(r);
-                                    return (
-                                      <button
-                                        key={r}
-                                        type="button"
-                                        disabled={booked}
-                                        onClick={() => toggleItem(r)}
-                                        className={`p-2 text-xs font-bold border rounded-lg transition-all ${
-                                          booked ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
-                                          formData.items.includes(r) ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white hover:border-brand-gold'
-                                        }`}
-                                      >
-                                        {r} {booked && '(Booked)'}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedService?.id === 'HOUSE' && (
-                       <div className="space-y-6">
-                          <div className="flex gap-2 p-1.5 bg-gray-50 rounded-2xl w-fit border border-gray-100">
-                            <button type="button" onClick={() => setFormData({...formData, houseBookingType: 'individual', items: []})} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${formData.houseBookingType === 'individual' ? 'bg-white shadow-sm text-brand-dark-green' : 'text-gray-400'}`}>Individual</button>
-                            <button type="button" onClick={() => setFormData({...formData, houseBookingType: 'cluster', items: []})} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${formData.houseBookingType === 'cluster' ? 'bg-brand-gold text-white shadow-md' : 'text-gray-400'}`}>Full Cluster</button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-in Date & Time</label>
-                              <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-                              <div className="flex gap-2">
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).hour} onChange={(e) => handleTimeChange("checkInTime", "hour", e.target.value)}>
-                                  {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
-                                </select>
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).minute} onChange={(e) => handleTimeChange("checkInTime", "minute", e.target.value)}>
-                                  {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkInTime).period} onChange={(e) => handleTimeChange("checkInTime", "period", e.target.value)}>
-                                  <option value="AM">AM</option>
-                                  <option value="PM">PM</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Check-out Date & Time</label>
-                              <input type="date" min={formData.date} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.checkOutDate} onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})} />
-                              <div className="flex gap-2">
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).hour} onChange={(e) => handleTimeChange("checkOutTime", "hour", e.target.value)}>
-                                  {Array.from({length: 12}, (_, i) => (i + 1).toString()).map(h => <option key={h} value={h}>{h}</option>)}
-                                </select>
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).minute} onChange={(e) => handleTimeChange("checkOutTime", "minute", e.target.value)}>
-                                  {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                                <select className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold outline-none" value={get12hPart(formData.checkOutTime).period} onChange={(e) => handleTimeChange("checkOutTime", "period", e.target.value)}>
-                                  <option value="AM">AM</option>
-                                  <option value="PM">PM</option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-
-                          {formData.houseBookingType === 'individual' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {HOUSE_CLUSTERS.map(c => (
-                                <div key={c.name} className="space-y-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{c.name.split(' ')[0]} {c.name.split(' ')[1]}</p>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    {c.houses.map(h => {
-                                      const booked = isItemBooked(h);
-                                      return (
-                                        <button
-                                          key={h}
-                                          type="button"
-                                          disabled={booked}
-                                          onClick={() => toggleItem(h)}
-                                          className={`p-2 text-xs font-bold border rounded-lg transition-all ${
-                                            booked ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
-                                            formData.items.includes(h) ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white hover:border-brand-gold'
-                                          }`}
-                                        >
-                                          {h.split(' ')[1]}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-2 gap-4">
-                               {HOUSE_CLUSTERS.map(c => {
-                                 const booked = c.houses.some(h => isItemBooked(h));
-                                 return (
-                                   <button 
-                                      key={c.name}
-                                      type="button"
-                                      disabled={booked}
-                                      onClick={() => setFormData({...formData, items: [c.name]})}
-                                      className={`p-6 text-center border-2 rounded-2xl transition-all ${
-                                        booked ? 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed' :
-                                        formData.items.includes(c.name) ? 'bg-brand-gold border-brand-gold text-white shadow-lg' : 'bg-white border-gray-100 hover:border-brand-gold'
-                                      }`}
-                                   >
-                                      <p className="font-bold">{c.name.split(' (')[0]}</p>
-                                      <p className="text-[10px] opacity-70">Full Cluster Access</p>
-                                   </button>
-                                 );
-                               })}
-                            </div>
-                          )}
-                       </div>
-                    )}
-
-                    {selectedService?.id === 'LEISURE' && (
-                       <div className="space-y-6">
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Date</label>
-                              <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Time Slot</label>
-                              <select className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})}>
-                                {Array.from({length: 12}, (_, i) => 9 + i).map(h => {
-                                  const label = `${h > 12 ? h-12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
-                                  return <option key={h} value={label}>{label}</option>;
-                                })}
-                              </select>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Activities</label>
-                            <div className="grid grid-cols-2 gap-3">
-                               {['Swimming Pool', 'Box Cricket'].map(act => (
-                                 <button key={act} type="button" onClick={() => toggleItem(act)} className={`py-4 rounded-2xl border font-bold transition-all ${formData.items.includes(act) ? 'bg-brand-gold text-white border-brand-gold shadow-lg shadow-brand-gold/20' : 'bg-white border-gray-100 hover:border-brand-gold'}`}>{act}</button>
-                               ))}
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Duration (Hours)</label>
-                            <input type="number" min="1" max="12" className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.durationHours} onChange={(e) => setFormData({...formData, durationHours: parseInt(e.target.value) || 1})} />
-                          </div>
-                       </div>
-                    )}
-
-                    {selectedService?.id === 'HALL' && (
-                       <div className="space-y-6">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Event Date</label>
-                            <input type="date" min={today} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Event Details / Notes</label>
-                            <textarea rows={3} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold" placeholder="Wedding/Conference details..." value={formData.tokenId} onChange={(e) => setFormData({...formData, tokenId: e.target.value})} />
-                          </div>
-                       </div>
-                    )}
-
-                    {/* Guest Count and Payment Method */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Total Guests</label>
-                        <input type="number" min="1" className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold" value={formData.guests} onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})} />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Payment Method</label>
-                        <div className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl font-bold text-[#0b1a10]">
-                          Cash
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary and Submit */}
-                    <div className="p-6 bg-[#0b1a10]/5 rounded-3xl border border-[#0b1a10]/10 flex flex-col md:flex-row justify-between items-center gap-4">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#0b1a10]/40">Total Amount to Collect</p>
-                        <p className="text-3xl font-black text-brand-sunset-start">₹{selectedService?.id === 'HALL' ? (
-                          <input type="number" className="bg-transparent border-b border-brand-sunset-start outline-none w-32" value={formData.total_amount} onChange={(e) => setFormData({...formData, total_amount: parseInt(e.target.value) || 0})} />
-                        ) : calculateTotal().toLocaleString()}</p>
-                      </div>
-                      <div className="flex gap-3 w-full md:w-auto">
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            setModalStep("selection");
-                            setSelectedService(null);
-                          }}
-                          className="flex-1 px-8 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-all"
-                        >
-                          Back
-                        </button>
-                        <button 
-                          disabled={formLoading || (formData.items.length === 0 && selectedService?.id !== 'HALL')}
-                          className="flex-[2] bg-brand-sunset-start text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-brand-sunset-start/20 disabled:opacity-50"
-                        >
-                          {formLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                            <>
-                              <CheckCircle2 className="w-5 h-5 text-white" /> Confirm Booking
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+            )}
+          </>
       </main>
       {/* Aadhar Viewer Modal */}
       <AnimatePresence>

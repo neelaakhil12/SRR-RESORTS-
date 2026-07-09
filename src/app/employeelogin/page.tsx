@@ -21,13 +21,17 @@ export default function LoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, requiredRole: "assistant" }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        router.push("/admin");
+        if (data.role === "assistant") {
+          router.push("/admin/bookings");
+        } else {
+          router.push("/admin");
+        }
         router.refresh();
       } else {
         setError(data.error || "Login failed. Please check your credentials.");
@@ -48,9 +52,9 @@ export default function LoginPage() {
               SRR <span className="text-brand-gold">Resorts</span>
             </h2>
           </Link>
-          <h2 className="text-center text-3xl font-black text-[#0b1a10]">Owner Login</h2>
+          <h2 className="text-center text-3xl font-black text-[#0b1a10]">Employee Portal</h2>
           <p className="mt-3 text-center text-sm text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
-            Administrative Access Only
+            Staff & Assistant Login
           </p>
         </div>
 
@@ -64,7 +68,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Admin Email</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Admin / Staff Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-gold transition-colors">
                   <Mail className="h-5 w-5" />
@@ -84,7 +88,7 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Admin Password</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Password</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-gold transition-colors">
                   <Lock className="h-5 w-5" />

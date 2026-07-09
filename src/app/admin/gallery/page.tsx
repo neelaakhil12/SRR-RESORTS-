@@ -20,6 +20,7 @@ interface GalleryImage {
   url: string;
   title: string;
   category: string;
+  videoUrl?: string;
 }
 
 export default function GalleryManagement() {
@@ -28,14 +29,31 @@ export default function GalleryManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
 
+  const [category, setCategory] = useState("Exterior");
+  const [videoUrl, setVideoUrl] = useState("");
+
   useEffect(() => {
     fetchImages();
   }, []);
+
+  useEffect(() => {
+    if (editingImage) {
+      setCategory(editingImage.category || "Exterior");
+      setVideoUrl(editingImage.videoUrl || "");
+    } else {
+      setCategory("Exterior");
+      setVideoUrl("");
+      setSelectedVideoFile(null);
+      setVideoPreview(null);
+    }
+  }, [editingImage, isModalOpen]);
 
   const fetchImages = async () => {
     try {
@@ -59,12 +77,33 @@ export default function GalleryManagement() {
     }
   };
 
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
+      setUploadError(null);
+    }
+  };
+
+  const getCloudinaryVideoThumbnail = (url: string) => {
+    if (url.includes("cloudinary.com") && url.includes("/video/upload/")) {
+      return url.replace("/video/upload/", "/video/upload/c_fill,g_center,h_360,w_640/").replace(/\.[^/.]+$/, ".jpg");
+    }
+    return "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1000&auto=format&fit=crop";
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const title = formData.get("title") as string;
 
-    if (!editingImage && !selectedFile) {
+    if (!editingImage && category === "Videos" && !selectedVideoFile) {
+      setUploadError("Please select a video file to upload");
+      return;
+    }
+
+    if (!editingImage && category !== "Videos" && !selectedFile) {
       setUploadError("Please select an image file");
       return;
     }
@@ -75,8 +114,30 @@ export default function GalleryManagement() {
     try {
       let imageUrl = editingImage?.url || "";
       let publicId = (editingImage as any)?.public_id || "";
+      let finalVideoUrl = editingImage?.videoUrl || "";
 
-      // 1. If a new file is selected, upload to Cloudinary
+      // 1. If a video is selected, upload it first
+      if (category === "Videos" && selectedVideoFile) {
+        const uploadVideoFormData = new FormData();
+        uploadVideoFormData.append("file", selectedVideoFile);
+        uploadVideoFormData.append("folder", "gallery_videos");
+
+        const uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: uploadVideoFormData
+        });
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok || !uploadData.url) {
+          throw new Error(uploadData.error || "Video upload to Cloudinary failed");
+        }
+        finalVideoUrl = uploadData.url;
+        // Auto-generate the thumbnail URL using Cloudinary
+        imageUrl = getCloudinaryVideoThumbnail(finalVideoUrl);
+        publicId = uploadData.public_id;
+      }
+
+      // 2. If a custom thumbnail/image file is selected, upload it
       if (selectedFile) {
         const uploadFormData = new FormData();
         uploadFormData.append("file", selectedFile);
@@ -92,14 +153,16 @@ export default function GalleryManagement() {
           throw new Error(uploadData.error || "Image upload to Cloudinary failed");
         }
         imageUrl = uploadData.url;
-        publicId = uploadData.public_id;
+        if (category !== "Videos") {
+          publicId = uploadData.public_id;
+        }
       }
 
-      // 2. Save/Update record in database
+      // 3. Save/Update record in database
       const method = editingImage ? "PUT" : "POST";
       const payload = editingImage 
-        ? { id: editingImage.id, title, url: imageUrl, public_id: publicId }
-        : { url: imageUrl, public_id: publicId, title };
+        ? { id: editingImage.id, title, url: imageUrl, public_id: publicId, category, videoUrl: finalVideoUrl }
+        : { url: imageUrl, public_id: publicId, title, category, videoUrl: finalVideoUrl };
 
       const saveRes = await fetch("/api/admin/gallery", {
         method,
@@ -110,16 +173,18 @@ export default function GalleryManagement() {
       const saveData = await saveRes.json();
 
       if (!saveRes.ok) {
-        throw new Error(saveData.error || `Failed to ${editingImage ? 'update' : 'save'} image record`);
+        throw new Error(saveData.error || `Failed to ${editingImage ? 'update' : 'save'} gallery record`);
       }
 
-      setSuccessMsg(`Image ${editingImage ? 'updated' : 'added'} successfully!`);
+      setSuccessMsg(`Gallery item ${editingImage ? 'updated' : 'added'} successfully!`);
       setTimeout(() => setSuccessMsg(null), 4000);
       await fetchImages();
       setIsModalOpen(false);
       setEditingImage(null);
       setSelectedFile(null);
+      setSelectedVideoFile(null);
       setPreview(null);
+      setVideoPreview(null);
     } catch (err: any) {
       console.error("Operation failed", err);
       setUploadError(err.message || "Operation failed. Please try again.");
@@ -129,7 +194,7 @@ export default function GalleryManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this image? This cannot be undone.")) return;
+    if (!confirm("Are you sure you want to delete this item? This cannot be undone.")) return;
     try {
       const res = await fetch(`/api/admin/gallery?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -213,10 +278,10 @@ export default function GalleryManagement() {
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-[#0b1a10]/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-            <div className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] border border-gray-100">
+              <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
                 <div>
-                  <h2 className="text-2xl font-bold text-[#0b1a10]">{editingImage ? 'Update Gallery Image' : 'Upload New Image'}</h2>
+                  <h2 className="text-2xl font-bold text-[#0b1a10]">{editingImage ? 'Update Gallery Item' : 'Upload New Media'}</h2>
                   {editingImage && <p className="text-[10px] font-black uppercase text-brand-gold tracking-widest mt-1">Editing existing entry</p>}
                 </div>
                 <button 
@@ -225,6 +290,8 @@ export default function GalleryManagement() {
                     setEditingImage(null);
                     setPreview(null);
                     setSelectedFile(null);
+                    setSelectedVideoFile(null);
+                    setVideoPreview(null);
                   }} 
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -232,15 +299,68 @@ export default function GalleryManagement() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                {uploadError && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 font-bold text-sm">
-                    ⚠️ {uploadError}
+              <div className="overflow-y-auto flex-1">
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                  {uploadError && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 font-bold text-sm">
+                      ⚠️ {uploadError}
+                    </div>
+                  )}
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold"
+                  >
+                    <option value="Exterior">Exterior</option>
+                    <option value="Rooms">Rooms</option>
+                    <option value="Hall">Convention Hall</option>
+                    <option value="Leisure">Leisure</option>
+                    <option value="Videos">Videos</option>
+                  </select>
+                </div>
+
+                {category === "Videos" && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">
+                      {editingImage ? 'Replace Video File (optional)' : 'Upload Video File'}
+                    </label>
+                    <label className="relative flex flex-col items-center justify-center gap-4 bg-gray-50 border-2 border-dashed border-gray-100 p-8 rounded-[2rem] cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-all">
+                      <input type="file" accept="video/*" className="hidden" onChange={handleVideoFileChange} />
+                      {videoPreview ? (
+                        <div className="relative w-full">
+                          <video src={videoPreview} className="w-full h-48 object-contain rounded-2xl shadow-md bg-black" controls />
+                          <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+                            New Video Selected
+                          </div>
+                        </div>
+                      ) : editingImage?.videoUrl ? (
+                        <div className="relative w-full">
+                          <video src={editingImage.videoUrl} className="w-full h-48 object-contain rounded-2xl shadow-md bg-black" controls />
+                          <div className="absolute top-2 left-2 bg-brand-gold text-[#0b1a10] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">
+                            Current Video
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="p-4 bg-white rounded-2xl shadow-sm text-brand-gold">
+                            <Upload className="w-8 h-8" />
+                          </div>
+                          <p className="text-sm font-bold text-gray-500">Click to upload Video file (MP4, WebM)</p>
+                        </>
+                      )}
+                    </label>
                   </div>
                 )}
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">
-                    {editingImage ? 'Replace Image (optional)' : 'Select File'}
+                    {category === "Videos" 
+                      ? (editingImage ? 'Replace Video Cover Thumbnail (optional)' : 'Upload Video Cover Thumbnail (optional)')
+                      : (editingImage ? 'Replace Image (optional)' : 'Select File')
+                    }
                   </label>
                   <label className="relative flex flex-col items-center justify-center gap-4 bg-gray-50 border-2 border-dashed border-gray-100 p-8 rounded-[2rem] cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-all">
                     <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -268,23 +388,24 @@ export default function GalleryManagement() {
                     )}
                   </label>
                   {editingImage && <p className="text-xs text-gray-400 text-center">Leave empty to keep the existing image</p>}
+                  {category === "Videos" && !preview && <p className="text-xs text-gray-400 text-center">If left empty, Cloudinary will auto-generate the cover thumbnail image from the video</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Image Title</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">{category === "Videos" ? "Video Title" : "Image Title"}</label>
                   <input
                     key={editingImage?.id || 'new'}
                     name="title"
                     required
                     defaultValue={editingImage?.title || ''}
                     className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold transition-all font-bold"
-                    placeholder="e.g. Luxury Suite View"
+                    placeholder="e.g. Resort Promo Video"
                   />
                 </div>
 
                 <div className="pt-4">
                   <button 
-                    disabled={uploading || (!editingImage && !selectedFile)}
+                    disabled={uploading || (!editingImage && !selectedFile && category !== "Videos") || (!editingImage && category === "Videos" && !selectedVideoFile)}
                     className="w-full bg-[#0b1a10] text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-black/10 disabled:opacity-50"
                   >
                     {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
@@ -297,6 +418,7 @@ export default function GalleryManagement() {
                 </div>
               </form>
             </div>
+          </div>
           </div>
         )}
       </main>
