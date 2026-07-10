@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import Gallery from "@/models/Gallery";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await dbConnect();
@@ -13,7 +15,11 @@ export async function GET() {
       _id: undefined
     }));
 
-    return NextResponse.json(formattedImages);
+    return NextResponse.json(formattedImages, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

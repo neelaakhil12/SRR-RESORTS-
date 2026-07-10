@@ -3,6 +3,8 @@ import dbConnect from "@/lib/mongoose";
 import Booking from "@/models/Booking";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await dbConnect();
@@ -43,6 +45,10 @@ export async function GET() {
       dailyRevenue,
       pendingPayments: pendingPaymentsCount,
       totalBookings: totalBookingsCount
+    }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
     });
 
   } catch (error: any) {

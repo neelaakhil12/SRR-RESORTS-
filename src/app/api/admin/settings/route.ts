@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import SiteSetting from "@/models/SiteSetting";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -10,11 +12,19 @@ export async function GET(request: Request) {
 
     if (key) {
       const setting = await SiteSetting.findOne({ key }).lean();
-      return NextResponse.json(setting || {});
+      return NextResponse.json(setting || {}, {
+        headers: {
+          "Cache-Control": "no-store, max-age=0, must-revalidate",
+        },
+      });
     }
 
     const settings = await SiteSetting.find().lean();
-    return NextResponse.json(settings);
+    return NextResponse.json(settings, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

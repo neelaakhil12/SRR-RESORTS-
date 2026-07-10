@@ -50,8 +50,9 @@ export function AdminSidebar() {
   }, []);
 
   const handleSignOut = async () => {
+    const target = role === "super" ? "/superadminlogin" : "/employeelogin";
     await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/employeelogin");
+    router.push(target);
     router.refresh();
   };
 

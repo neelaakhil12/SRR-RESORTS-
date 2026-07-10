@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import Coupon from "@/models/Coupon";
 
+export const dynamic = "force-dynamic";
+
 // GET all coupons
 export async function GET() {
   try {
@@ -12,7 +14,11 @@ export async function GET() {
       id: c._id.toString(),
       _id: undefined,
     }));
-    return NextResponse.json(formatted);
+    return NextResponse.json(formatted, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

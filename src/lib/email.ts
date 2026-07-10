@@ -133,3 +133,75 @@ export async function sendBookingConfirmation(booking: any) {
     console.error("Failed to send confirmation email:", error);
   }
 }
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("SMTP credentials missing, skipped email for password reset");
+    return false;
+  }
+
+  const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const resetLink = `${appUrl}/superadminlogin/reset?token=${token}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Reset Password - SRR Resorts</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f7f7; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .header { background: #0b1a10; padding: 50px 40px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { color: #c5a059; margin: 10px 0 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+        .content { padding: 40px; }
+        .greeting { font-size: 20px; font-weight: 700; color: #0b1a10; margin-bottom: 10px; }
+        .intro { color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 30px; }
+        .button-container { text-align: center; margin-top: 10px; }
+        .button { background-image: linear-gradient(to right, #c5a059, #e0c283); color: #0b1a10; padding: 18px 35px; border-radius: 14px; text-decoration: none; font-weight: 800; font-size: 14px; display: inline-block; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3); }
+        .footer { background: #fafafa; padding: 30px; text-align: center; border-top: 1px solid #f0f0f0; }
+        .footer p { color: #aaa; font-size: 12px; margin: 0; }
+        .brand-text { color: #c5a059; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <p>Security Link</p>
+          <h1>Password Reset Request</h1>
+        </div>
+        <div class="content">
+          <p class="greeting">Hello Admin,</p>
+          <p class="intro">We received a request to reset your password for the <span class="brand-text">SRR Resorts Super Admin Portal</span>. Click the button below to set a new password. This link is valid for 1 hour.</p>
+          
+          <div class="button-container">
+            <a href="${resetLink}" class="button">Reset Password</a>
+          </div>
+          
+          <p class="intro" style="margin-top: 30px; font-size: 13px;">If the button above does not work, copy and paste the following URL into your web browser:<br/>
+          <a href="${resetLink}" style="color: #c5a059; word-break: break-all;">${resetLink}</a></p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} SRR Resorts & Convention. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"SRR Resorts" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `Password Reset Request - SRR Resorts`,
+      html: html,
+    });
+    console.log(`Password reset email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
+    return false;
+  }
+}

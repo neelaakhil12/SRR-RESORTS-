@@ -6,7 +6,10 @@ import AssistantAdmin from "@/models/AssistantAdmin";
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const adminSession = cookieStore.get("srr_admin_session")?.value;
+    const adminSession = 
+      cookieStore.get("srr_super_session")?.value ||
+      cookieStore.get("srr_employee_session")?.value ||
+      cookieStore.get("srr_admin_session")?.value;
 
     console.log("[Profile API] Cookie session value:", adminSession);
 

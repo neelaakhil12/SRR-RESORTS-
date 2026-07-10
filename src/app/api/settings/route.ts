@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import SiteSetting from "@/models/SiteSetting";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -20,7 +22,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized key" }, { status: 403 });
     }
 
-    return NextResponse.json(setting || { key, value: null });
+    return NextResponse.json(setting || { key, value: null }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

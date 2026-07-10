@@ -4,6 +4,8 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 import dbConnect from "@/lib/mongoose";
 import Booking from "@/models/Booking";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -26,7 +28,11 @@ export async function GET() {
       _id: undefined
     }));
 
-    return NextResponse.json(formattedBookings);
+    return NextResponse.json(formattedBookings, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     console.error("Booking fetch error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

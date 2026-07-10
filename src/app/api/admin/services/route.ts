@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import Service from "@/models/Service";
 
+export const dynamic = "force-dynamic";
+
 // GET all services
 export async function GET() {
   try {
@@ -15,7 +17,11 @@ export async function GET() {
         _id: undefined
     }));
 
-    return NextResponse.json(formattedServices);
+    return NextResponse.json(formattedServices, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

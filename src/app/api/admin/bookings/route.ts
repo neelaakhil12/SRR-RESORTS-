@@ -3,6 +3,8 @@ import dbConnect from "@/lib/mongoose";
 import Booking from "@/models/Booking";
 import { sendBookingConfirmation } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await dbConnect();
@@ -16,7 +18,11 @@ export async function GET() {
       end_date: b.end_date || b.date || ""
     }));
 
-    return NextResponse.json(formattedBookings);
+    return NextResponse.json(formattedBookings, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
