@@ -148,7 +148,7 @@ export default function HomeContent() {
   const [hero, setHero] = useState<HeroSettings>({
     title: "Welcome to SRR",
     subtitle: "Where Comfort Meets Luxury",
-    backgroundImage: "/hero.png",
+    backgroundImage: "/hero.jpg",
     ctaText: "Book Now"
   });
   const [offerings, setOfferings] = useState({
@@ -231,7 +231,7 @@ export default function HomeContent() {
       {/* Hero Section */}
       <section 
         className={`relative w-full h-[56.25vw] min-h-[220px] md:h-auto md:min-h-[900px] flex items-center justify-center bg-cover bg-center md:bg-[50%_20%] text-white overflow-visible ${isExpanded ? 'mb-44' : 'mb-2'} md:mb-16 transition-all duration-500`}
-        style={{ backgroundImage: `url('${hero.backgroundImage || "/hero.png"}')` }}
+        style={{ backgroundImage: `url('${hero.backgroundImage || "/hero.jpg"}')` }}
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center pt-2 md:pt-0">

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SRR Resorts & Convention | Luxury Stay & Events in Choutuppal",
     description: "Book your luxury stay or grand event at SRR Resorts. Premium rooms, private cottages, and 1000+ guest convention hall.",
-    images: ["/hero.png"],
+    images: ["/hero.jpg"],
   }
 };
 
