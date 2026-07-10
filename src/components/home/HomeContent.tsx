@@ -355,7 +355,7 @@ export default function HomeContent() {
                 </div>
 
                 <AnimatePresence>
-                  {(isExpanded || (typeof window !== 'undefined' && window.innerWidth >= 768)) && (
+                  {(isExpanded || (mounted && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
                     <motion.div 
                       className="flex flex-col md:flex-row flex-1 items-stretch gap-0.5 md:gap-0"
                       initial={{ height: 0, opacity: 0 }}
