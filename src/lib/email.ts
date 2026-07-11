@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendBookingConfirmation(booking: any) {
+export async function sendBookingConfirmation(booking: any, origin?: string) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn("SMTP credentials missing, skipped email for booking:", booking.id);
     return;
@@ -23,7 +23,7 @@ export async function sendBookingConfirmation(booking: any) {
     return;
   }
 
-  const appUrl = process.env.NEXTAUTH_URL || "https://srrresorts.com";
+  const appUrl = origin || process.env.NEXTAUTH_URL || "https://srrresorts.com";
   const itemsList = Array.isArray(items) ? items.join(", ") : items;
 
   const html = `
@@ -108,7 +108,7 @@ export async function sendBookingConfirmation(booking: any) {
               </tr>
             </table>
           </div>
-
+ 
           <div class="button-container">
             <a href="${appUrl}/dashboard" class="button">View Digital Ticket</a>
           </div>
@@ -134,13 +134,13 @@ export async function sendBookingConfirmation(booking: any) {
   }
 }
 
-export async function sendPasswordResetEmail(email: string, token: string) {
+export async function sendPasswordResetEmail(email: string, token: string, origin?: string) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn("SMTP credentials missing, skipped email for password reset");
     return false;
   }
 
-  const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const appUrl = origin || process.env.NEXTAUTH_URL || "http://localhost:3000";
   const resetLink = `${appUrl}/superadminlogin/reset?token=${token}`;
 
   const html = `

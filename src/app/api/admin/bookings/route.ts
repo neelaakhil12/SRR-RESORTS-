@@ -42,7 +42,8 @@ export async function POST(request: Request) {
 
     // Trigger confirmation email
     // We don't await this to avoid slowing down the response
-    sendBookingConfirmation(formattedData);
+    const origin = new URL(request.url).origin;
+    sendBookingConfirmation(formattedData, origin);
 
     return NextResponse.json(formattedData);
   } catch (error: any) {

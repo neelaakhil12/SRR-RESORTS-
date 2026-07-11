@@ -37,8 +37,10 @@ export async function POST(request: Request) {
       { upsert: true, new: true }
     );
 
+    const origin = new URL(request.url).origin;
+
     // Send the email
-    const emailSent = await sendPasswordResetEmail(email.toLowerCase(), token);
+    const emailSent = await sendPasswordResetEmail(email.toLowerCase(), token, origin);
 
     if (!emailSent) {
       return NextResponse.json(
