@@ -10,7 +10,9 @@ import { hashPassword } from "@/lib/auth";
 async function verifySuperAdmin() {
   try {
     const cookieStore = await cookies();
-    const session = cookieStore.get("srr_admin_session")?.value;
+    const session = 
+      cookieStore.get("srr_super_session")?.value ||
+      cookieStore.get("srr_admin_session")?.value;
     if (!session) return false;
     const [role] = session.split(":");
     return role === "super";
